@@ -101,8 +101,16 @@ falsch ist."*
 and date in its footer — that is the staleness anchor.
 
 **Commit all of it.** This is team knowledge: the next colleague inherits the
-onboarding instead of repeating it. `.omnigent/runs/` is the only part that is
-gitignored.
+onboarding instead of repeating it.
+
+`.omnigent/runs/` is the only part that stays out — worker reports are session
+noise, not knowledge. Add the entry yourself if it is not already there:
+
+```bash
+grep -qxF '.omnigent/runs/' .gitignore 2>/dev/null || echo '.omnigent/runs/' >> .gitignore
+```
+
+Nothing else about the repo's `.gitignore` is yours to change.
 
 ## Staleness
 
