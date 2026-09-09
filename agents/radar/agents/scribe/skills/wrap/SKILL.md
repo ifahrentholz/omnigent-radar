@@ -22,8 +22,19 @@ land. You have the completed diff, so you can say what the change actually *is*.
 Read `git diff <base>...HEAD`, then rewrite the branch's history into messages
 that describe the finished change: `git commit --amend` for a single commit, or
 `git reset --soft <base> && git commit` to collapse a noisy series into one
-honest commit. Keep the `Co-authored-by: omnigent <noreply@omnigent.ai>` trailer
-on every resulting commit.
+honest commit.
+
+**Every resulting commit must end with the trailer**
+`Co-authored-by: omnigent <noreply@omnigent.ai>` — keep it where it is there,
+and ADD it where it is not. Do not assume the implementer set it; on the first
+real run it did not. Verify before pushing:
+
+```bash
+git log <base>..HEAD --format='%h %(trailers:key=Co-authored-by,valueonly)'
+```
+
+Every line must carry the trailer. This is the last point in the pipeline where
+it can still be fixed without a force-push.
 
 Match the convention you found. If the project uses Conventional Commits, use
 them. If subjects carry the ticket ID, carry it.

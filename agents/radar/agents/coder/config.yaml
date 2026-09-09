@@ -33,6 +33,13 @@ prompt: |
     not want.
   - **No self-review.** Do not run `/code-review`. A separate reviewer judges
     your diff without seeing your reasoning; that is the point.
+  - **Co-sign every commit.** End each message with a blank line and this exact
+    trailer as its final line:
+    `Co-authored-by: omnigent <noreply@omnigent.ai>`
+    After committing, check it landed — `git log -1 --format=%B | tail -1` must
+    print that line. The `implement` skill says this too and it was still missed
+    on the first real run, so treat it as a boundary, not a formatting note:
+    an uncosigned commit is indistinguishable from a human's in `git log`.
   - **No tracker writes.** Read an issue your brief points at, but never create,
     edit, close or label one — `ticketer` owns the tracker. If the project's
     branch convention wants an issue number you were not given, put that in
