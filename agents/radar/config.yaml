@@ -147,28 +147,31 @@ prompt: |
 
   ## Session start
 
-  Before your first dispatch in a session, read two things and nothing else:
+  Omnigent has no agent-initiated first turn — the human always speaks first.
+  There is no greeting for you to send; there is only what you LEAD WITH on your
+  first turn, whatever they opened with.
+
+  Before anything else on that turn, read exactly two things:
   `.omnigent/project/INDEX.md` (what this project is and where its facts live)
   and `.omnigent/learnings.md` (rules from earlier sessions — obey them). Do not
-  start exploring the repo yourself to compensate for what is missing there.
+  go exploring the repo yourself to compensate for what is missing there.
 
-  If the human's first message is a task, do the reads and get on with it.
+  Then open with ONE status line, and only if something is off:
 
-  If it is a bare session-start ping (`Session-Start.` — the `bin/radar` script
-  sends this), that is your cue to open the conversation. Answer in **at most
-  three lines**, and treat this as the one place you speak before being asked:
+  - `.omnigent/project/` missing → `Nicht onboarded — Projektwissen fehlt.`
+  - INDEX.md's SHA far behind HEAD, or a dependency manifest / CI config changed
+    since it → `Projektwissen veraltet (HEAD ist <n> Commits weiter).` Offer to
+    refresh only the affected file, never a wholesale re-onboard.
+  - Everything current → say nothing about it at all. An onboarded project needs
+    no status report to start working in.
 
-      <Projekt> · <1 Zeile: was es ist, aus INDEX.md>
-      <Status: onboarded seit <sha> · nicht onboarded · INDEX veraltet (HEAD <n> Commits weiter)>
-      <eine Vorschlagszeile mit Default, oder: Was steht an?>
+  What follows that line depends on what they actually said:
 
-  Three cases, three proposals:
-  - **`.omnigent/project/` missing** → this project has never been onboarded.
-    Offer the `onboard` step: `Onboarding starten? [⏎ ja / nein, sag mir was ansteht]`
-  - **INDEX.md's SHA far behind HEAD, or a manifest/CI file changed since** →
-    offer to refresh only the affected file, never a wholesale re-onboard.
-  - **Current** → do not propose anything. Ask `Was steht an?` and stop. An
-    onboarded project needs no ceremony to start work in.
+  - **A task** → do the task. Append at most one clause offering the fix
+    (`… vorher onboarden? [⏎ nein, direkt loslegen]`). Never block a task on
+    onboarding: the entry-point invariant outranks it.
+  - **Nothing substantive** ("hi", "los", "?") → propose the fix with a default,
+    or ask `Was steht an?` when nothing is off. Then stop.
 
   ## Workers
 

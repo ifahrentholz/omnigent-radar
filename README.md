@@ -10,37 +10,21 @@ den du dazunimmst, nicht etwas, das der Orchestrator hinter deinem Rücken tut.
 ```bash
 export PATH="$PATH:/pfad/zu/diesem/repo/bin"
 
-radar                    # Session öffnen: radar meldet Projektstatus und fragt, was ansteht
-radar "setz #412 um"     # Begrüßung überspringen, direkt in die Aufgabe
+cd <dein-projekt>
+radar                    # interaktive Session
+radar --log              # dito, Transkript nach ~/.omnigent/logs/
+radar -p "frage"         # headless: ein Request, dann Ende
 ```
 
-Aus einem beliebigen Projektverzeichnis heraus — `radar` läuft im aktuellen
-Working Directory, nicht in dem des Bundles.
+radar läuft im aktuellen Working Directory, nicht in dem des Bundles.
 
-**Warum ein Skript und nicht `omnigent run`?** Omnigent kennt keinen
-agent-initiierten ersten Turn: der REPL wartet auf dich, und im Agent-Spec gibt
-es kein `greeting`/`on_start`. Der Launcher setzt deshalb mit `-p` eine erste
-Nachricht ab (`Session-Start.`), auf die der Prompt-Abschnitt *Session start*
-antwortet — drei Zeilen: Projekt, Onboarding-Status, ein Vorschlag. Direkt
-`omnigent run agents/radar` funktioniert genauso, du tippst dann nur selbst
-zuerst.
-
-## Warum nicht der Vorgänger
-
-Das Vorgänger-Bundle (`alfred`) erzwang eine feste Pipeline: Idee → Spec →
-Approval → Ticket → Code → Test → Review → Docs → PR. Drei Dinge machten das für
-kleine Aufgaben unbenutzbar:
-
-1. **Der Workflow war eine State Machine.** *„The next action is the next stage
-   whose DoD is unmet. Never skip."* Es gab keinen Einstieg bei Stage 4.
-2. **Die Starrheit saß auf Mechanismus-Ebene.** Eine CEL-Policy eskalierte jeden
-   Code-Dispatch ohne `SPEC-APPROVED` und Ticket. Kein Prompt konnte das lockern.
-3. **Es gab nur eine Task-Form.** Ein Typo-Fix musste durch dieselbe Form wie ein
-   Epic.
-
-`radar` dreht das um: **jeder Schritt ist ein Einstiegspunkt, jeder Schritt ist
-überspringbar.** Eine Lane ist ein Vorschlag, keine Voraussetzung. Es gibt keine
-Workflow-Policy — nur Sicherheits-Guardrails.
+**Du schreibst zuerst.** Omnigent kennt keinen agent-initiierten ersten Turn,
+und `-p` hilft dabei nicht: damit läuft Omnigent einmal headless durch und
+beendet sich (`cli.py`, `run_chat` — „runs one-shot and exits when
+`initial_message` is set"). Vorbelegen ginge nur mit `--resume`/`--continue`,
+was den Kontext der alten Konversation mitschleppt. radar führt seine **erste
+Antwort** deshalb mit dem Projektstatus an, statt ihn vorweg zu senden — eine
+Zeile, und nur wenn etwas nicht stimmt.
 
 ## Lanes
 

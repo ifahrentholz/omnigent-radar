@@ -1,24 +1,21 @@
 #!/usr/bin/env bash
 # radar — start the routing orchestrator in the current project.
 #
-#   radar                     open a session; radar reports the project's status
-#                             and asks what's up (see config.yaml, "Session start")
-#   radar "setz #412 um"      skip the greeting, go straight to the task
-#   radar "" --resume         first non-flag arg is the prompt, the rest passes
-#                             through to `omnigent run`
+#   cd <projekt> && radar        interaktive Session (du schreibst zuerst)
+#   radar --log                  dito, Transkript nach ~/.omnigent/logs/
+#   radar -p "frage"             HEADLESS: ein Request, dann Ende
 #
-# Omnigent has no agent-initiated first turn — the REPL waits for the human — so
-# the greeting is produced by seeding a first message with -p. That is what the
-# default "Session-Start." below is for.
+# Zu -p: es setzt KEINE erste Nachricht in einem REPL ab. Omnigent läuft einmal
+# durch und beendet sich, sobald ein Prompt gesetzt ist (cli.py: "run_chat runs
+# one-shot and exits when initial_message is set"). Eine interaktive Session
+# lässt sich nur zusammen mit --resume/--continue vorbelegen, was den Kontext
+# der alten Konversation mitschleppt. Es gibt also keinen Weg, radar in einer
+# frischen Session zuerst sprechen zu lassen — er führt seine erste Antwort
+# stattdessen mit dem Projektstatus an, siehe "Session start" in
+# agents/radar/config.yaml.
+#
+# Alle Argumente gehen unverändert an `omnigent run`.
 set -euo pipefail
 
 BUNDLE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/agents/radar"
-
-if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
-  PROMPT="$1"; shift
-else
-  PROMPT="Session-Start."
-fi
-[ -n "$PROMPT" ] || PROMPT="Session-Start."
-
-exec omnigent run "$BUNDLE" -p "$PROMPT" "$@"
+exec omnigent run "$BUNDLE" "$@"
