@@ -17,12 +17,16 @@ the end. Report every gate you ran as `command → pass/fail`. If that file does
 not exist, use what the repo tells you and say in your result that the gates
 were guessed.
 
-Commit to the current branch. Co-sign every commit you author: end the message
-with a blank line, then this exact trailer as the final line —
+Create or switch to the task branch if your brief names one, but **do not
+commit**. Leave your work in the working tree.
 
-    Co-authored-by: omnigent <noreply@omnigent.ai>
+That is deliberate. Omnigent's changed-files view runs
+`git status --porcelain` and shows **uncommitted** changes only — a committed
+change is invisible to it. The human reviews and annotates the diff in that
+view, so the moment you commit, you take the change away from them. `wrap`
+commits at the end, once the diff is final and reviewed.
 
 **Do not push. Do not open a PR or MR. Do not run a code review.** Those are
 separate steps (`wrap` and `review`) with their own owners, and they run only if
-the human asks for them. Your deliverable is a committed branch and an honest
-report of what you ran.
+the human asks for them. Your deliverable is a dirty working tree on the right
+branch and an honest report of what you ran.

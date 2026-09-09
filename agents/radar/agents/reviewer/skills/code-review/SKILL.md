@@ -20,6 +20,8 @@ Whatever the user said is the fixed point — a commit SHA, branch name, tag, `m
 
 Capture the diff command once: `git diff <fixed-point>...HEAD` (three-dot, so the comparison is against the merge-base). Also note the list of commits via `git log <fixed-point>..HEAD --oneline`.
 
+**The usual case in this bundle is an UNCOMMITTED change.** The implementer leaves its work in the working tree so the human can review it in Omnigent's changed-files view, and `wrap` commits only at the very end. So when `git log <fixed-point>..HEAD` is empty but `git status --porcelain --untracked-files=all` is not, the change under review is the working tree: use `git diff` for tracked edits and read each untracked file in full — an untracked file shows up in no diff at all, and skipping it means reviewing half the change. Say in your report which of the two you reviewed.
+
 Before going further, confirm the fixed point resolves (`git rev-parse <fixed-point>`) and the diff is non-empty. A bad ref or empty diff should fail here — not inside two parallel sub-agents.
 
 ### 2. Identify the spec source

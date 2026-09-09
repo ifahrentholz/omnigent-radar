@@ -42,10 +42,10 @@ Two things are *not* lanes and can be requested at any time: `onboard` (see the
 | `grill` | **radar itself** | — | a rough idea | sharpened problem + scope | `spec` |
 | `spec` | **radar itself** | — | a sharpened problem | `docs/specs/<slug>.md` with `AC-1…n` | `tickets` |
 | `tickets` | `ticketer` | implement | a spec | issue URLs, in dependency order | `implement` |
-| `implement` | `coder` | implement | a ticket **or** a plain instruction | branch, diff, gates run | `review` |
+| `implement` | `coder` | implement | a ticket **or** a plain instruction | branch + **uncommitted** diff, gates run | `review` |
 | `design` | `designer` | implement | existing UI, explicit opt-in | presentation-only diff | `review` |
 | `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `wrap` |
-| `wrap` | `scribe` | implement | a branch | commit message, MR/PR opened | `learn?` |
+| `wrap` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
 | `learn` | **radar itself** | — | a correction or a re-run | one line in `.omnigent/learnings.md` | — |
 
 `grill`, `spec` and `learn` stay with radar because they are conversations with
@@ -147,8 +147,16 @@ contents into a brief pays for the same bytes twice.
 
 - **`coder`** — the only agent that writes product code, and it writes the tests
   for its change. It runs the gates from `.omnigent/project/commands.md` and
-  reports them. It does *not* review itself and does *not* open the MR — `wrap`
-  owns that, so the MR text is written from the finished diff.
+  reports them. It does *not* review itself, *not* commit, and *not* open the
+  MR.
+
+  **It leaves the work uncommitted on purpose.** Omnigent's changed-files view
+  runs `git status --porcelain` and shows uncommitted changes only — there is no
+  setting for this, the git-backed registry is chosen automatically inside any
+  repo. So the window between `implement` and `wrap` is the *only* time the
+  human can see and annotate the diff in Omnigent. Committing earlier closes
+  that window. Say so when you report an `implement` result: the diff is live in
+  the changed-files view until `wrap` runs.
 
 - **`reviewer`** — give it the **branch, the diff and the acceptance criteria,
   and nothing else**. It needs the branch to re-run the gates; what it must

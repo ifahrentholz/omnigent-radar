@@ -13,31 +13,43 @@ them; do not invent your own. If that file is missing, derive what you can from
 `git log --format=%s -50` and the repo's template directories, and say in your
 result that the conventions were inferred rather than read.
 
-## 1. The commit message is written from the finished diff
+## 1. You own the commit
 
-This is why this step is separate from `implement`. The coder wrote its messages
-while the change was still forming — mid-flight, with no view of where it would
-land. You have the completed diff, so you can say what the change actually *is*.
+Nobody has committed yet. The `coder` and `designer` deliberately leave their
+work in the working tree, because Omnigent's changed-files view runs
+`git status` and shows uncommitted changes only — that is where the human reads
+and annotates the diff. You are the step that ends that window.
 
-Read `git diff <base>...HEAD`, then rewrite the branch's history into messages
-that describe the finished change: `git commit --amend` for a single commit, or
-`git reset --soft <base> && git commit` to collapse a noisy series into one
-honest commit.
+Two consequences. First, **check what is actually there before you commit**:
 
-**Every resulting commit must end with the trailer**
-`Co-authored-by: omnigent <noreply@omnigent.ai>` — keep it where it is there,
-and ADD it where it is not. Do not assume the implementer set it; on the first
-real run it did not. Verify before pushing:
+```bash
+git status --porcelain --untracked-files=all
+git diff            # tracked changes
+```
+
+Untracked files are part of the change too — stage them deliberately, and never
+`git add -A` without looking. A stray `dist/`, `.env` or editor droppings in the
+commit is a defect you introduced, not one you inherited.
+
+Second, **you are writing the message from the finished diff** — the reason this
+step exists separately from `implement`. An implementer writing its message
+mid-flight cannot yet say what the change turned out to be. You can.
+
+If earlier commits already exist on the branch (a resumed lane, a human's own
+work), leave them alone unless one of them is wrong — a mistyped type, a subject
+that no longer matches what shipped. Reword with `git commit --amend` or
+`git rebase -i <base>` only while the branch is unpushed.
+
+**Every commit you create or touch ends with the trailer**
+`Co-authored-by: omnigent <noreply@omnigent.ai>`, on its own final line after a
+blank line. You are now the only step that commits, so this is the only place it
+can go missing. Verify before pushing:
 
 ```bash
 git log <base>..HEAD --format='%h %(trailers:key=Co-authored-by,valueonly)'
 ```
 
-Every line must carry the trailer. This is the last point in the pipeline where
-it can still be fixed without a force-push.
-
-Match the convention you found. If the project uses Conventional Commits, use
-them. If subjects carry the ticket ID, carry it.
+Every line must carry it.
 
 ## 2. Push
 
