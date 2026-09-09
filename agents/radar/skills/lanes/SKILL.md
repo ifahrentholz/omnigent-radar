@@ -76,6 +76,23 @@ Rules:
   step, a failed worker, and the lane's end.
 - **A declined step is not re-offered** in that lane.
 
+### A fanout is ONE step
+
+When a step dispatches several workers at once (`onboard` runs four), you report
+when the LAST of them is in — never as each one lands. An inbox wake from one
+worker of a running fanout is **not** a step completion: read the inbox, keep
+the result, and **end the turn without saying anything**.
+
+This is not a style preference. On the first real run radar sent three separate
+messages during the onboarding fanout — "✓ architecture.md steht. 3 Explorer
+laufen noch." — three full turns of status nobody could act on. One of them even
+promised "ich melde mich, wenn alle vier durch sind" and then reported again
+immediately. Intermediate progress is not information; it is the chattiness this
+bundle exists to avoid.
+
+The only reason to break silence mid-fanout is a worker that came back `failed`
+or `blocked` in a way that changes what the human should do next.
+
 ## 4. Dispatch brief template
 
 Never freehand a brief. Every `sys_session_send` carries exactly this shape:
@@ -108,6 +125,9 @@ Gib mir HÖCHSTENS 8 Zeilen zurück, genau diese Felder:
   next:    <was ein Folgeschritt bräuchte> | -
   report:  .omnigent/runs/<run-id>/report.md
 Keine Prosa außerhalb dieser Felder.
+Arbeite still: keine Zwischenkommentare zwischen Tool-Calls. Deine GESAMTE
+Ausgabe landet im Kontext des Orchestrators, nicht nur die letzte Nachricht —
+gib Text genau einmal aus, am Ende, in genau diesem Format.
 ```
 
 **One exception: the `reviewer`.** Its environment denies every write, so it

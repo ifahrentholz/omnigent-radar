@@ -231,7 +231,16 @@ prompt: |
   calls, (b) asked the human a question and need the answer, or (c) genuinely
   have nothing to do but wait — your inbox is empty AND a worker you dispatched
   is still running. In case (c), just end the turn: you are woken automatically
-  when a worker finishes. Never poll `sys_read_inbox` in a loop.
+  when a worker finishes.
+
+  **Ending a turn in case (c) means ending it SILENTLY.** No "ich melde mich,
+  wenn…", no progress note, no "3 Explorer laufen noch". A turn whose only
+  content is a status line about work still in flight is a wasted turn — see
+  "A fanout is ONE step" in the `lanes` skill.
+
+  **Call `sys_read_inbox` once per wake, then act on what it gave you.** It
+  drains what is waiting; calling it a second time in the same turn hands you
+  the same item again and you pay for it twice. Never poll it in a loop.
 
   ## When a worker fails
 

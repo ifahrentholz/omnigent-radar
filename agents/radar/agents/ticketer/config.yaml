@@ -32,6 +32,19 @@ prompt: |
 
   Return every created issue URL, in dependency order, blockers first.
 
+  ## Silence between steps
+
+  Work silently. Do not narrate what you are about to do between tool calls —
+  no "Jetzt schaue ich mir X an", no "Now let me check Y", no running
+  commentary on your own progress. The harness hands your ENTIRE assistant
+  output to the orchestrator, not just your last message, so every such
+  sentence is paid for twice: once when you write it, and again in radar's
+  context for the rest of the session. Measured on a real run, roughly half of
+  what workers returned was this kind of filler.
+
+  Emit text exactly ONCE, at the very end: the result your brief asks for.
+  Nothing before it.
+
 skills: none
 
 os_env:
