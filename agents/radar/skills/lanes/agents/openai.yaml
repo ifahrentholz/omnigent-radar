@@ -1,0 +1,3 @@
+interface:
+  display_name: "Lanes"
+  short_description: "Route a request to the cheapest lane that fits"

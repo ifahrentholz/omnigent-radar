@@ -1,0 +1,5 @@
+interface:
+  display_name: "Wrap"
+  short_description: "Commit message, push, and open the MR/PR"
+policy:
+  allow_implicit_invocation: false
