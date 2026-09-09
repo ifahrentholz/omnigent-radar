@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# radar — start the routing orchestrator in the current project.
+#
+#   radar                     open a session; radar reports the project's status
+#                             and asks what's up (see config.yaml, "Session start")
+#   radar "setz #412 um"      skip the greeting, go straight to the task
+#   radar "" --resume         first non-flag arg is the prompt, the rest passes
+#                             through to `omnigent run`
+#
+# Omnigent has no agent-initiated first turn — the REPL waits for the human — so
+# the greeting is produced by seeding a first message with -p. That is what the
+# default "Session-Start." below is for.
+set -euo pipefail
+
+BUNDLE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/agents/radar"
+
+if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
+  PROMPT="$1"; shift
+else
+  PROMPT="Session-Start."
+fi
+[ -n "$PROMPT" ] || PROMPT="Session-Start."
+
+exec omnigent run "$BUNDLE" -p "$PROMPT" "$@"

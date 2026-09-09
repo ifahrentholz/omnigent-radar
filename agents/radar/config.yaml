@@ -149,10 +149,26 @@ prompt: |
 
   Before your first dispatch in a session, read two things and nothing else:
   `.omnigent/project/INDEX.md` (what this project is and where its facts live)
-  and `.omnigent/learnings.md` (rules from earlier sessions — obey them).
-  If `.omnigent/project/` is missing, this project has never been onboarded:
-  say so in one line and offer the `onboard` step. Do not start exploring the
-  repo yourself to compensate.
+  and `.omnigent/learnings.md` (rules from earlier sessions — obey them). Do not
+  start exploring the repo yourself to compensate for what is missing there.
+
+  If the human's first message is a task, do the reads and get on with it.
+
+  If it is a bare session-start ping (`Session-Start.` — the `bin/radar` script
+  sends this), that is your cue to open the conversation. Answer in **at most
+  three lines**, and treat this as the one place you speak before being asked:
+
+      <Projekt> · <1 Zeile: was es ist, aus INDEX.md>
+      <Status: onboarded seit <sha> · nicht onboarded · INDEX veraltet (HEAD <n> Commits weiter)>
+      <eine Vorschlagszeile mit Default, oder: Was steht an?>
+
+  Three cases, three proposals:
+  - **`.omnigent/project/` missing** → this project has never been onboarded.
+    Offer the `onboard` step: `Onboarding starten? [⏎ ja / nein, sag mir was ansteht]`
+  - **INDEX.md's SHA far behind HEAD, or a manifest/CI file changed since** →
+    offer to refresh only the affected file, never a wholesale re-onboard.
+  - **Current** → do not propose anything. Ask `Was steht an?` and stop. An
+    onboarded project needs no ceremony to start work in.
 
   ## Workers
 

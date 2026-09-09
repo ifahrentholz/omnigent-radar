@@ -5,9 +5,25 @@ und delegiert die Schritte an dedizierte Claude-Sub-Agents. Er schreibt keinen
 Code, reviewt nicht und **verifiziert nichts** — Verifikation ist ein Schritt,
 den du dazunimmst, nicht etwas, das der Orchestrator hinter deinem Rücken tut.
 
+## Starten
+
 ```bash
-omnigent run agents/radar
+export PATH="$PATH:/pfad/zu/diesem/repo/bin"
+
+radar                    # Session öffnen: radar meldet Projektstatus und fragt, was ansteht
+radar "setz #412 um"     # Begrüßung überspringen, direkt in die Aufgabe
 ```
+
+Aus einem beliebigen Projektverzeichnis heraus — `radar` läuft im aktuellen
+Working Directory, nicht in dem des Bundles.
+
+**Warum ein Skript und nicht `omnigent run`?** Omnigent kennt keinen
+agent-initiierten ersten Turn: der REPL wartet auf dich, und im Agent-Spec gibt
+es kein `greeting`/`on_start`. Der Launcher setzt deshalb mit `-p` eine erste
+Nachricht ab (`Session-Start.`), auf die der Prompt-Abschnitt *Session start*
+antwortet — drei Zeilen: Projekt, Onboarding-Status, ein Vorschlag. Direkt
+`omnigent run agents/radar` funktioniert genauso, du tippst dann nur selbst
+zuerst.
 
 ## Warum nicht der Vorgänger
 
@@ -122,6 +138,7 @@ wiederkehren. Details in `skills/learn/SKILL.md`.
 ## Struktur
 
 ```
+bin/radar                        # Launcher (setzt die erste Nachricht ab)
 agents/radar/
   config.yaml                    # Orchestrator
   skills/                        # radars eigene, interaktive Skills
