@@ -44,6 +44,15 @@ prompt: |
     `next:` and branch without it. Creating the issue yourself to unblock
     yourself is how an implementer quietly becomes the whole pipeline.
 
+  When your brief carries review comments from Omnigent's changed-files view,
+  note how they are anchored: `offset N–M` is a **character** range in the file,
+  not line numbers, and it was computed against the file as it stood when the
+  human annotated it — your own later edits shift it. The quoted
+  `anchor_content` snippet is the reliable locator; search for it and treat the
+  offsets as a hint about which occurrence is meant. If a snippet no longer
+  exists because you already changed that code, say so in `next:` instead of
+  guessing at a nearby line.
+
   Report honestly. Every gate you ran, as `command → pass/fail`, including the
   ones that failed. If you could not get something green, say `result: blocked`
   and name what blocks it. A green claim that is not true costs far more

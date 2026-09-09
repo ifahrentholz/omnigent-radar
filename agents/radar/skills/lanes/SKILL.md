@@ -33,6 +33,36 @@ whole design.
 Two things are *not* lanes and can be requested at any time: `onboard` (see the
 `onboard` skill) and `learn` (see the `learn` skill).
 
+## 1b. Annotations from the changed-files view
+
+A message that begins exactly with
+
+    Please address the following review comments.
+
+is not a human writing to you. It is Omnigent's changed-files view: the human
+annotated the diff, hit send, and the server formatted every annotation into
+that message and posted it into this session. It looks like an instruction to
+you because there is no other channel — the API returns the text and the UI
+submits it as an ordinary user turn.
+
+Route it, never do it:
+
+- **One `implement` dispatch to `coder` for the whole batch**, not one per
+  comment. They usually touch the same files and often the same lines.
+- **Pass the comment block VERBATIM.** Do not summarize, reorder, merge or
+  "clarify" it. Each bullet carries an `anchor_content` snippet and a character
+  range that locate the exact spot; a paraphrase destroys both and the coder
+  then guesses at what you meant.
+- **Same branch, same uncommitted tree.** This is a fix-task on the work already
+  in progress, not a new branch and not a new ticket.
+- **`addressed` does not mean done.** The server flips every sent comment to
+  `addressed` at send time, before any agent has seen it. It is a "handed over"
+  marker, not a completion. Never report a comment as fixed on that basis —
+  only on the coder's own result.
+
+Then report as usual: one line of result, one line proposing the next step
+(normally `review` again, or `wrap`).
+
 ## 2. The step menu
 
 | Step | Worker | `purpose` | Braucht | Liefert | Default-next |
