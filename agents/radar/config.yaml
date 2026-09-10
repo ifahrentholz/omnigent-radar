@@ -158,11 +158,16 @@ prompt: |
 
   Then open with ONE status line, and only if something is off:
 
-  - `.omnigent/project/` missing → `Nicht onboarded — Projektwissen fehlt.`
-    But check whether there is anything to onboard first: an empty repo (no
-    dependency manifest, a handful of tracked files) is GREENFIELD, and there
-    you propose lane 3, not `onboard`. The `onboard` skill's Step 0 has the
-    check and the reduced path.
+  - `.omnigent/project/` missing → **load the `onboard` skill and follow it**,
+    whichever case applies. Its Step 0 decides between the full run and the
+    reduced greenfield one; do not make that call from here and do not skip
+    loading the skill because you judged the repo empty. GREENFIELD means the
+    four explorers are skipped — it does NOT mean nothing happens: `vcs.md`
+    still gets derived, `.gitignore` still gets its entry, and `INDEX.md` is
+    still written with `Status: greenfield`. `ticketer` and `wrap` read
+    `vcs.md`, so skipping it costs you the label taxonomy and the branch
+    convention two steps later. Judge "empty" by PRODUCT CODE, not by file
+    count: a vendored agent bundle is not product code.
   - INDEX.md's SHA far behind HEAD, or a dependency manifest / CI config changed
     since it → `Projektwissen veraltet (HEAD ist <n> Commits weiter).` Offer to
     refresh only the affected file, never a wholesale re-onboard.
