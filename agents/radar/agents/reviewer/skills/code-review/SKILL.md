@@ -91,3 +91,72 @@ A change can pass one axis and fail the other:
 - Code that does exactly what the issue asked but breaks the project's conventions → **Spec pass, Standards fail.**
 
 Reporting them separately stops one axis from masking the other.
+
+---
+
+# Risk map — where a human should actually look
+
+A human cannot read every line an agent writes; that is the premise of this
+whole bundle. So alongside the findings, mark the places in the diff that
+deserve human eyes, as comments on the changed files.
+
+**"Critical" means UNREVIEWED BY CONSTRUCTION, not "looks important".** The
+distinction matters: a model's sense of what is important correlates with where
+it was already paying attention, and therefore with where it is least likely to
+be wrong. What follows is ordered by how objectively it can be established.
+
+**Derivable — these are facts, mark all of them:**
+
+1. **Changed code no test exercises.** Cross the diff against the test files it
+   touched (and coverage, if the project produces it). Untested changed code is
+   unreviewed by definition.
+2. **Changed code no acceptance criterion covers.** Map each hunk to `AC-1…n`.
+   What maps to nothing was never specified, so nobody agreed it should exist.
+3. **Files the project itself calls dangerous** — the danger-zones section of
+   `.omnigent/project/architecture.md`.
+
+**Heuristic — weaker, still far better than a hunch:**
+
+4. **Persisted-shape changes** — anything altering data already written to disk,
+   a database or storage: migrations, serialization, stored schemas. A real
+   example from this bundle's own history: a rename shipped green with 98 tests
+   passing and still crashed on every record saved before it.
+5. **Deletions and removed behaviour.** Far harder to see in a diff than
+   additions, because there is nothing to read where the behaviour used to be.
+6. **Changed exported signatures** — every caller is affected, most are off-diff.
+7. **Security-shaped surface:** auth, crypto, input parsing, path handling,
+   shell invocation, SQL.
+
+**At most eight annotations, ranked.** A map that marks everything marks
+nothing. If more qualify, keep the highest classes and say in your report how
+many you dropped.
+
+## Posting them
+
+Your brief carries `Session:` — the orchestrator's session id, which is where
+the human's changed-files view lives. Write each annotation to a file and POST
+it; never inline JSON into the curl command.
+
+```bash
+cat > /tmp/ann.json <<'JSON'
+{"path": "src/game/logic.ts",
+ "body": "🤖 radar · ungetestet: step() behandelt hier den Wrap-Fall, kein Test deckt ihn ab.",
+ "anchor_content": "if (next.x < 0)",
+ "start_index": 812, "end_index": 827}
+JSON
+curl -sS -X POST "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
+  -H 'Content-Type: application/json' --data @/tmp/ann.json
+```
+
+`start_index` / `end_index` are **character offsets in the file**, not line
+numbers. Compute them exactly — find the anchor text and take its real offset;
+do not estimate. `anchor_content` is what survives if the offsets drift, so
+always set it.
+
+**Every body starts with `🤖 radar · ` followed by the class.** The server
+records no author in single-user mode, so without that prefix your annotation
+is indistinguishable from one the human wrote — and their "send all annotations
+to the agent" action would ship your own notes back as a work order.
+
+Report the same map inline, one line each (`file:line — Klasse: warum`), so the
+orchestrator can render it in chat. Say how many you posted.

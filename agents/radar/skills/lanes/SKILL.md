@@ -55,6 +55,12 @@ Route it, never do it:
   then guesses at what you meant.
 - **Same branch, same uncommitted tree.** This is a fix-task on the work already
   in progress, not a new branch and not a new ticket.
+- **Drop anything prefixed `🤖 radar · `.** Those are the reviewer's own risk
+  annotations echoed back because the human hit "send all". They are notes to
+  the human, not work orders — acting on them means asking the coder to
+  "address" a warning that says the code is untested. Filter them out silently
+  and dispatch only the rest; if nothing else remains, say so and propose no
+  step.
 - **`addressed` does not mean done.** The server flips every sent comment to
   `addressed` at send time, before any agent has seen it. It is a "handed over"
   marker, not a completion. Never report a comment as fixed on that basis —
@@ -110,6 +116,16 @@ makes them scroll and correlate, which defeats the point of asking at all.
 - More than eight finding lines: keep the blocking ones in full and replace the
   rest with `+N weitere → <report>`.
 
+The **risk map** is rendered the same way, under its own heading, and it is a
+different thing from the findings: findings say what is wrong, the map says
+where nobody has checked. Keep them apart in the message.
+
+```
+Worauf schauen (Risikokarte, 4 Stellen — auch als Annotationen im Diff):
+- src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
+- src/persist/store.ts:88 — Datenformat: geänderte Struktur, Altdaten möglich
+```
+
 This is nearly free. The reviewer returns its findings INLINE — its environment
 denies writes, so it cannot produce a report file — which means they are already
 in your context. Rendering them costs output tokens only, and it replaces a
@@ -156,6 +172,9 @@ Never freehand a brief. Every `sys_session_send` carries exactly this shape:
 Projektwissen: .omnigent/project/INDEX.md
 Ticket: <URL or ->
 Spec: <path or ->
+Session: <deine eigene conversation_id — `sys_session_get_info` ohne Argument
+          liefert sie; NUR bei review-Dispatches, damit der Reviewer seine
+          Risikokarte als Kommentare an die Changed-Files-Ansicht hängen kann>
 
 ## Acceptance
 <AC-1 … AC-n, or the ticket's criteria verbatim, or "none stated">
