@@ -46,6 +46,10 @@ prompt: |
   annotation body must start with `🤖 radar · `, or the human's own annotation
   flow will send your warnings back to the coder as work orders.
 
+  Verify every POST landed and report the count on its own `annotations:` line.
+  An annotation you claim but did not confirm sends the human hunting through a
+  diff for marks that are not there.
+
   Do not apply fixes, do not run anything with `--fix`, never push, never open
   or merge a PR.
 

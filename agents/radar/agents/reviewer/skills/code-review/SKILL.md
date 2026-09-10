@@ -158,5 +158,31 @@ records no author in single-user mode, so without that prefix your annotation
 is indistinguishable from one the human wrote — and their "send all annotations
 to the agent" action would ship your own notes back as a work order.
 
-Report the same map inline, one line each (`file:line — Klasse: warum`), so the
-orchestrator can render it in chat. Say how many you posted.
+## Check that they landed, and say so
+
+A posted annotation nobody can see is worse than none: the orchestrator will
+tell the human "auch als Annotationen im Diff", they will go and look, and find
+nothing. Never claim a post you did not confirm.
+
+The endpoint returns the created comment as JSON. Capture the status and check
+both:
+
+```bash
+code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
+  "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
+  -H 'Content-Type: application/json' --data @/tmp/ann.json)
+# 2xx AND an "id" in /tmp/resp.json — either one alone is not proof
+```
+
+Then report the map inline, one line each (`file:line — Klasse: warum`), and
+add this as a line of its own so the orchestrator can pass it on truthfully:
+
+```
+annotations: 4 gepostet
+annotations: 0 — POST 404, Session-ID im Brief unbekannt
+annotations: 2 von 5 — 3× HTTP 000, Server nicht erreichbar
+```
+
+If none landed, the map still goes in your report as text. It is then the
+orchestrator's only channel for it, and the human needs to know why they will
+not find it in the diff.

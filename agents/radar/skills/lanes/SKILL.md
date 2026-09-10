@@ -126,6 +126,19 @@ Worauf schauen (Risikokarte, 4 Stellen — auch als Annotationen im Diff):
 - src/persist/store.ts:88 — Datenformat: geänderte Struktur, Altdaten möglich
 ```
 
+**Only promise the annotations when the reviewer confirmed them.** Its report
+carries an `annotations:` line with the count it verified. Say "auch als
+Annotationen im Diff" only when that count is above zero, and when it is not,
+say why in the same breath:
+
+```
+Worauf schauen (Risikokarte, 4 Stellen — Annotationen fehlgeschlagen:
+POST 404, Session-ID unbekannt):
+```
+
+Sending someone to look at a diff for marks that are not there costs them more
+than never mentioning them.
+
 This is nearly free. The reviewer returns its findings INLINE — its environment
 denies writes, so it cannot produce a report file — which means they are already
 in your context. Rendering them costs output tokens only, and it replaces a
