@@ -58,19 +58,86 @@ equivalent, stop and report that instead.
 
 ## 3. Open the MR / PR
 
-Use the tracker CLI from `vcs.md` (`glab mr create` / `gh pr create`). Fill the
-project's template if it has one. The description says:
+### Write the body to a FILE first
 
-- **What changed** — in the reader's terms, not a file list.
-- **Why** — link the ticket; do not restate it.
-- **How it was verified** — the gates that ran and their outcome, quoted from
-  the reports you were given. Do not run them yourself, and never claim a gate
-  you were not told about.
-- **What a reviewer should look at first** — if review already ran, its
-  unresolved findings.
+Never assemble the description inline in the same shell command that calls the
+CLI. On the first real run that produced an MR whose text ended with a stray
+`EOF` and `)` — a hand-written heredoc that broke, pasted straight into a
+permanent, public artefact.
 
-Link the ticket so the tracker closes it on merge, in whatever form this project
-uses (`Closes #412`, or a manual link).
+Write the body to `.omnigent/runs/<run-id>/mr-body.md`, then:
+
+```bash
+# GitHub — reads the file directly
+gh pr create --title "<title>" --body-file .omnigent/runs/<run-id>/mr-body.md
+
+# GitLab — no file flag exists; command substitution in double quotes is safe
+# for arbitrary text, including newlines, quotes and backticks
+glab mr create --title "<title>" \
+  --description "$(cat .omnigent/runs/<run-id>/mr-body.md)"
+```
+
+### Never paste command output
+
+Gate results are a **table of verdicts**, never a transcript. That first MR
+carried vitest's full coloured output — ANSI escapes and all — plus the entire
+vite build log, which is unreadable in a browser and buries the one fact a
+reader wants.
+
+If a number matters, state the number (`8/8`). The raw output belongs in the
+run report. **If your text contains `\x1b[` or a line of `─────`, you have
+pasted a terminal, not written a description.**
+
+### The body
+
+Fill the project's own template when it has one. Otherwise exactly this, in the
+language the project's existing MRs and commits use — and consistently, not
+English headings over German prose:
+
+```markdown
+## Was sich ändert
+
+<2–4 Sätze in der Sprache des Lesers. Was kann man jetzt, was vorher nicht.
+Keine Dateiliste — die steht im Diff.>
+
+## Warum
+
+<Eine Zeile, plus der Ticket-Link. Das Ticket nicht nacherzählen.>
+
+## Verifiziert
+
+| Gate | Ergebnis |
+|---|---|
+| `pnpm tsc --noEmit` | pass |
+| `pnpm vitest run` | pass (8/8) |
+| `pnpm eslint .` | pass |
+
+<Quelle nennen: "laut coder" / "vom reviewer unabhängig nachgefahren".
+Selbst ausführen tust du nichts, und was dir niemand berichtet hat,
+behauptest du nicht.>
+
+## Worauf zuerst schauen
+
+<Offene Findings des Reviews, je eine Zeile `file:line — Aussage`.
+Wenn keine: "Review: approve, keine offenen Findings.">
+
+Closes #<n>
+```
+
+`Closes #<n>` steht **genau einmal**, am Ende. Nicht zusätzlich unter „Warum".
+
+### Read it back
+
+After creating, fetch the description and check it — this is the one artefact
+of the whole run that outlives the session and that other people read:
+
+```bash
+glab mr view <n> --output json | jq -r .description   # oder: gh pr view <n> --json body -q .body
+```
+
+Escape sequences, a stray `EOF` or `)`, a dangling `— ,`, an unclosed
+parenthesis, `Closes` twice: fix with `glab mr update <n> --description ...` or
+`gh pr edit <n> --body-file ...` before you report done.
 
 **Never merge.** The human merges.
 
