@@ -1,7 +1,6 @@
 ---
 name: wrap
 description: "Close out a finished branch — write the commit message from the completed diff, push, and open the MR/PR against the project's conventions."
-disable-model-invocation: true
 ---
 
 You are closing out a branch that is already committed and (optionally) already

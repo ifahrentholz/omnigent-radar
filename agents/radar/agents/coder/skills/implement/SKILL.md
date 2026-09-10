@@ -1,7 +1,6 @@
 ---
 name: implement
 description: "Implement a piece of work from a spec, a ticket, or a plain instruction."
-disable-model-invocation: true
 ---
 
 Implement the work described in your brief.

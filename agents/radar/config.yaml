@@ -63,12 +63,24 @@ tools:
   - scribe
   - designer
 
-# Nothing is discovered. Every skill radar or a worker runs is BUNDLED in its
-# own directory, so this bundle is copy-and-go into any project. The default
-# (``all``) would inject the host's entire skill roster into every single turn
-# — a standing token cost, and a standing temptation to run a step itself
-# instead of delegating it.
-skills: none
+# The bundle's own skills, named explicitly. This is an ALLOWLIST, not a
+# discovery hint, and naming them is what makes them loadable at all:
+# ``skills: none`` resolves to ``ClaudeAgentOptions.skills=[]`` on the
+# claude-sdk path, and an empty allowlist rejects every Skill call with
+# "not in this session's skills allowlist" — including the bundle's own.
+# A list keeps the model's skill listing limited to exactly these (so the
+# host's roster still stays out of every turn) while making them invokable.
+# The cost of the list form is that ``setting_sources`` falls back to the
+# SDK default, so the host's CLAUDE.md and project settings do load again.
+skills:
+- lanes
+- onboard
+- learn
+- grilling
+- grill-me
+- grill-with-docs
+- to-spec
+- domain-modeling
 
 guardrails:
   # A day-long approval window: an ASK should outlive the human stepping away.
