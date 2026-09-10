@@ -159,6 +159,10 @@ prompt: |
   Then open with ONE status line, and only if something is off:
 
   - `.omnigent/project/` missing → `Nicht onboarded — Projektwissen fehlt.`
+    But check whether there is anything to onboard first: an empty repo (no
+    dependency manifest, a handful of tracked files) is GREENFIELD, and there
+    you propose lane 3, not `onboard`. The `onboard` skill's Step 0 has the
+    check and the reduced path.
   - INDEX.md's SHA far behind HEAD, or a dependency manifest / CI config changed
     since it → `Projektwissen veraltet (HEAD ist <n> Commits weiter).` Offer to
     refresh only the affected file, never a wholesale re-onboard.

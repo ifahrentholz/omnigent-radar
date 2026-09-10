@@ -13,6 +13,44 @@ So the bar for including something is: **expensive to derive, and stable over
 time.** A file tree is neither — it is cheap to re-read and stale by tomorrow.
 Do not capture it.
 
+## Step 0 — Is there anything to onboard?
+
+Check before you fan out anything:
+
+```bash
+git ls-files | wc -l
+ls package.json pyproject.toml go.mod Cargo.toml pom.xml build.gradle Gemfile composer.json 2>/dev/null
+```
+
+**No dependency manifest and only a handful of tracked files means this is a
+GREENFIELD repo** — a `.gitignore`, a README, maybe some agent config, and
+nothing else. There is no architecture to map, no conventions to read out of
+code that does not exist, and no domain language that anyone has settled yet.
+Four explorers over an empty tree produce four empty files.
+
+Worse than useless: it would mark the project **onboarded**. The staleness
+check only fires on drift, so a project onboarded while empty never gets
+re-onboarded once it has real code — the knowledge base stays permanently
+hollow and every later brief inherits it.
+
+So on a greenfield repo do the REDUCED path and nothing more:
+
+1. Run Step 1 (derive) and write `vcs.md`. It works on an empty repo — the
+   remote, the CLI, the templates and the branch convention are all there
+   already — and `ticketer` and `wrap` need it.
+2. Ensure `.gitignore` carries `.omnigent/runs/` (see Output below).
+3. Write `INDEX.md` with **`Status: greenfield`** in its footer instead of an
+   onboarding SHA. That line is what makes the reduced state visible later.
+4. **Skip Step 2 entirely.** No explorers.
+5. Tell the human in one line: the decisions this project has not made yet are
+   made in a `spec`, not discovered by an explorer. Propose lane 3
+   (`grill` → `spec` → `tickets`), and note that a full onboarding is worth
+   running once the first ticket has landed and there is real code to read.
+
+When `INDEX.md` says `Status: greenfield` and the repo now HAS a manifest and
+real source files, offer the full onboarding — that is the one case where you
+re-onboard wholesale, because there was never anything to overwrite.
+
 ## Order of operations: derive → detect → ask
 
 Never ask the human for something the repo already knows. Work in this order and
