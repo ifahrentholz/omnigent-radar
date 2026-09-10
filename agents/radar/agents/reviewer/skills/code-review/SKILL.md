@@ -174,8 +174,22 @@ code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
 # 2xx AND an "id" in /tmp/resp.json — either one alone is not proof
 ```
 
-Then report the map inline, one line each (`file:line — Klasse: warum`), and
-add this as a line of its own so the orchestrator can pass it on truthfully:
+Then report the map inline, one line each, in this exact shape — the path
+always first, and a leading `⚑` on exactly those lines whose annotation you
+confirmed landed:
+
+```
+⚑ src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
+⚑ src/persist/store.ts:88 — Datenformat: Altdaten möglich
+  src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
+```
+
+Without the per-line mark a partial result is useless: "2 von 5 gepostet"
+tells the human that three places have no mark, but not WHICH three — and
+those are precisely the ones they now have to find on their own.
+
+Add this as a line of its own so the orchestrator can pass the total on
+truthfully:
 
 ```
 annotations: 4 gepostet

@@ -121,10 +121,16 @@ different thing from the findings: findings say what is wrong, the map says
 where nobody has checked. Keep them apart in the message.
 
 ```
-Worauf schauen (Risikokarte, 4 Stellen — auch als Annotationen im Diff):
-- src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
-- src/persist/store.ts:88 — Datenformat: geänderte Struktur, Altdaten möglich
+Worauf schauen (Risikokarte, 3 Stellen · ⚑ = im Diff annotiert):
+⚑ src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
+⚑ src/persist/store.ts:88 — Datenformat: geänderte Struktur, Altdaten möglich
+  src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
 ```
+
+Pass the reviewer's `⚑` marks through unchanged. A line without one has no
+annotation in the diff, so that spot is one the human must navigate to
+themselves — silently dropping the distinction sends them looking for a mark
+that is not there.
 
 **Only promise the annotations when the reviewer confirmed them.** Its report
 carries an `annotations:` line with the count it verified. Say "auch als
