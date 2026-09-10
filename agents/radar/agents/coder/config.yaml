@@ -8,7 +8,16 @@ description: >-
 
 executor:
   type: omnigent
-  model: claude-sonnet-5
+  # Opus with the 1M window. The coder holds the most at once of any worker —
+  # ticket, spec, conventions, the files it is changing, and its own test run —
+  # and it is the only one whose mistakes reach the product.
+  #
+  # ``context_window`` is paired with the ``[1m]`` suffix deliberately: the
+  # suffix asks the provider for the large window, this tells Omnigent how much
+  # to let the conversation grow before compacting. Set only one and the other
+  # silently caps it.
+  model: claude-opus-5[1m]
+  context_window: 1000000
   config:
     harness: claude-sdk
     permission_mode: auto

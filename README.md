@@ -63,7 +63,7 @@ Entscheidungen.
 | Worker | Modell | darf pushen | Read-only |
 |---|---|---|---|
 | `explorer` | sonnet | – | faktisch (schreibt genau eine Datei) |
-| `coder` | sonnet | – | – |
+| `coder` | **opus [1m]** | – | – |
 | `reviewer` | **opus** | – | ja (`read_only_os`) |
 | `ticketer` | sonnet | – | – |
 | `scribe` | sonnet | **ja** | – |
