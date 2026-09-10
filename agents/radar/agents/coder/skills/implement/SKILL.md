@@ -22,10 +22,10 @@ commit**. Leave your work in the working tree.
 That is deliberate. Omnigent's changed-files view runs
 `git status --porcelain` and shows **uncommitted** changes only — a committed
 change is invisible to it. The human reviews and annotates the diff in that
-view, so the moment you commit, you take the change away from them. `wrap`
+view, so the moment you commit, you take the change away from them. `deliver`
 commits at the end, once the diff is final and reviewed.
 
 **Do not push. Do not open a PR or MR. Do not run a code review.** Those are
-separate steps (`wrap` and `review`) with their own owners, and they run only if
+separate steps (`deliver` and `review`) with their own owners, and they run only if
 the human asks for them. Your deliverable is a dirty working tree on the right
 branch and an honest report of what you ran.

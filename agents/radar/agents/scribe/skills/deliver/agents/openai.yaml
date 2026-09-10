@@ -1,0 +1,5 @@
+interface:
+  display_name: "Deliver"
+  short_description: "Commit, push, and open the MR/PR"
+policy:
+  allow_implicit_invocation: false

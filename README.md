@@ -31,8 +31,8 @@ Zeile, und nur wenn etwas nicht stimmt.
 | Lane | Wann | Kette |
 |---|---|---|
 | **0 · chat** | Frage, kein Änderungswunsch | antworten, ggf. ein `explore` |
-| **1 · quick** | kleine, benannte Änderung, kein Ticket | `implement` → `wrap?` |
-| **2 · ticket** | Ticket-Referenz vorhanden | `implement` → `review` → `wrap` |
+| **1 · quick** | kleine, benannte Änderung, kein Ticket | `implement` → `deliver?` |
+| **2 · ticket** | Ticket-Referenz vorhanden | `implement` → `review` → `deliver` |
 | **3 · feature** | neue Fähigkeit, Scope offen | `grill` → `spec` → `tickets` → pro Ticket Lane 2 |
 
 Bei Zweifel wird die **günstigere** Lane vorgeschlagen. Hochstufen kostet dich
@@ -55,7 +55,7 @@ Entscheidungen.
 | `implement` | `coder` | Branch, Diff, Gates gelaufen |
 | `design` | `designer` (opt-in) | Presentation-only Diff |
 | `review` | `reviewer` | Findings vs. AC, Gates nachgefahren |
-| `wrap` | `scribe` | Commit-Message, MR/PR offen |
+| `deliver` | `scribe` | Commit, Push, MR/PR offen |
 | `learn` | radar | eine Zeile in `.omnigent/learnings.md` |
 
 ## Worker

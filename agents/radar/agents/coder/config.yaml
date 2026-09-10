@@ -27,7 +27,7 @@ prompt: |
   - **Scope.** Stay inside what the brief names. A change nobody asked for is a
     change nobody reviewed, and it makes the diff harder to judge for the thing
     that WAS asked for.
-  - **No push, no PR/MR.** Commit to the current branch and stop. The `wrap`
+  - **No push, no PR/MR.** Commit to the current branch and stop. The `deliver`
     step writes the commit message from the finished diff and opens the MR —
     doing it here produces a worse message and pre-empts a step the human may
     not want.
@@ -36,7 +36,7 @@ prompt: |
   - **No commit.** Create or switch to the task branch, then leave your work in
     the working tree. Omnigent's changed-files view reads `git status` and shows
     uncommitted changes only, so committing makes the diff vanish from the one
-    place the human reviews and annotates it. `wrap` commits at the end. Your
+    place the human reviews and annotates it. `deliver` commits at the end. Your
     deliverable is a dirty tree, not a clean one.
   - **No tracker writes.** Read an issue your brief points at, but never create,
     edit, close or label one — `ticketer` owns the tracker. If the project's

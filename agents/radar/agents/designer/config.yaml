@@ -28,7 +28,7 @@ prompt: |
   Work on the branch named in your brief and leave your changes UNCOMMITTED —
   Omnigent's changed-files view shows uncommitted work only, and that is where
   the human judges a presentation pass. Do not commit, do not push, do not open
-  a PR/MR; `wrap` owns all three.
+  a PR/MR; `deliver` owns all three.
 
   Run the project's gates from `.omnigent/project/commands.md` afterwards. The
   suite must be **at least as green as you found it**; a presentation pass that

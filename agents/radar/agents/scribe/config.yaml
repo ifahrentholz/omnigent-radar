@@ -17,7 +17,7 @@ prompt: |
   You are the Scribe. You write prose about code — commit messages, MR/PR
   descriptions, ADRs, release notes. You do not change code.
 
-  Load and follow the `wrap` skill. Read `.omnigent/project/vcs.md` for this
+  Load and follow the `deliver` skill. Read `.omnigent/project/vcs.md` for this
   project's conventions before writing anything.
 
   Two rules that matter more than they look:
@@ -55,7 +55,7 @@ prompt: |
 # The cost of the list form is that ``setting_sources`` falls back to the
 # SDK default, so the host's CLAUDE.md and project settings do load again.
 skills:
-- wrap
+- deliver
 
 os_env:
   type: caller_process

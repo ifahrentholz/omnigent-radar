@@ -38,7 +38,7 @@ bundle, a licence and a README can add up to dozens of tracked files without a
 line of the thing being built.
 
 The reduced path below is not "skip onboarding". It is a shorter onboarding,
-and every step of it is required — `ticketer` and `wrap` both read `vcs.md`,
+and every step of it is required — `ticketer` and `deliver` both read `vcs.md`,
 so dropping it costs the label taxonomy and the branch convention at the very
 step that needs them.
 
@@ -46,7 +46,7 @@ So on a greenfield repo do the REDUCED path, and all of it:
 
 1. Run Step 1 (derive) and write `vcs.md`. It works on an empty repo — the
    remote, the CLI, the templates and the branch convention are all there
-   already — and `ticketer` and `wrap` need it.
+   already — and `ticketer` and `deliver` need it.
 2. Ensure `.gitignore` carries `.omnigent/runs/` (see Output below).
 3. Write `INDEX.md` with **`Status: greenfield`** in its footer instead of an
    onboarding SHA. That line is what makes the reduced state visible later.

@@ -21,8 +21,8 @@ that lane in one line.
 | Lane | Signals | Chain | State file? |
 |---|---|---|---|
 | **0 · chat** | A question, no imperative to change the repo: "wie funktioniert…", "wo liegt…", "warum…" | answer, or one `explore` | no |
-| **1 · quick** | Scoped imperative change, no ticket, obviously small: bump a dep, fix a typo, add a null check in a named file | `implement` → `wrap?` | no |
-| **2 · ticket** | A ticket reference is present (`#412`, an issue URL), or "setz das um" against known work | `implement` → `review` → `wrap` | no |
+| **1 · quick** | Scoped imperative change, no ticket, obviously small: bump a dep, fix a typo, add a null check in a named file | `implement` → `deliver?` | no |
+| **2 · ticket** | A ticket reference is present (`#412`, an issue URL), or "setz das um" against known work | `implement` → `review` → `deliver` | no |
 | **3 · feature** | New capability, no ticket yet, scope not yet pinned: "ich möchte X bauen" | `grill` → `spec` → `tickets` → then lane 2 per ticket | yes |
 
 **When the lane is ambiguous, propose the CHEAPER one.** Escalating mid-task
@@ -61,7 +61,7 @@ Route it, never do it:
   only on the coder's own result.
 
 Then report as usual: one line of result, one line proposing the next step
-(normally `review` again, or `wrap`).
+(normally `review` again, or `deliver`).
 
 ## 2. The step menu
 
@@ -74,8 +74,8 @@ Then report as usual: one line of result, one line proposing the next step
 | `tickets` | `ticketer` | implement | a spec | issue URLs, in dependency order | `implement` |
 | `implement` | `coder` | implement | a ticket **or** a plain instruction | branch + **uncommitted** diff, gates run | `review` |
 | `design` | `designer` | implement | existing UI, explicit opt-in | presentation-only diff | `review` |
-| `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `wrap` |
-| `wrap` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
+| `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `deliver` |
+| `deliver` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
 | `learn` | **radar itself** | — | a correction or a re-run | one line in `.omnigent/learnings.md` | — |
 
 `grill`, `spec` and `learn` stay with radar because they are conversations with
@@ -87,13 +87,33 @@ explicit yes. Never infer it from a ticket that merely sounds visual.
 
 ## 3. The ask format
 
-After every completed step: one line of result, one line proposing the next.
-Then stop.
+After every completed step: the result, then the next step as a question.
+Then stop. The shape is in radar's prompt under "Reporting"; the cap is eight
+lines and the question is always last, on its own line.
 
 ```
-✓ implement → branch feature/412-login, 4 Dateien, gates grün (coder)
-  review anhängen? [⏎ ja / nein / direkt wrap]
+✓ implement → Branch feature/412-login · 4 Dateien geändert
+Gates: tsc · vitest 12/12 · eslint — alle grün (laut coder)
+
+review anhängen? [⏎ ja / nein, direkt deliver]
 ```
+
+### Findings belong in the message, not behind a link
+
+When a result IS the input to the decision you are about to put to the human —
+review findings above all — render them. "Findings oben im Reviewer-Ergebnis"
+makes them scroll and correlate, which defeats the point of asking at all.
+
+- **Every blocking finding**, one line each: `file:line — die Aussage`.
+- **Every non-blocking finding**, same shape.
+- **Nitpicks as a count only**, plus the report path.
+- More than eight finding lines: keep the blocking ones in full and replace the
+  rest with `+N weitere → <report>`.
+
+This is nearly free. The reviewer returns its findings INLINE — its environment
+denies writes, so it cannot produce a report file — which means they are already
+in your context. Rendering them costs output tokens only, and it replaces a
+pointer nobody can act on.
 
 Rules:
 - **One decision per message.** If two things are open, ask the blocking one.
@@ -183,10 +203,10 @@ contents into a brief pays for the same bytes twice.
   **It leaves the work uncommitted on purpose.** Omnigent's changed-files view
   runs `git status --porcelain` and shows uncommitted changes only — there is no
   setting for this, the git-backed registry is chosen automatically inside any
-  repo. So the window between `implement` and `wrap` is the *only* time the
+  repo. So the window between `implement` and `deliver` is the *only* time the
   human can see and annotate the diff in Omnigent. Committing earlier closes
   that window. Say so when you report an `implement` result: the diff is live in
-  the changed-files view until `wrap` runs.
+  the changed-files view until `deliver` runs.
 
 - **`reviewer`** — give it the **branch, the diff and the acceptance criteria,
   and nothing else**. It needs the branch to re-run the gates; what it must
@@ -204,8 +224,22 @@ contents into a brief pays for the same bytes twice.
   one catch-all issue. Reads `.omnigent/project/vcs.md` for tracker, labels and
   templates.
 
-- **`scribe`** — commit message, MR/PR description, ADRs, release notes. Follows
-  the commit convention recorded in `vcs.md`.
+- **`scribe`** — runs `deliver`: commit message, push, MR/PR, plus ADRs and
+  release notes. Follows the commit convention in `vcs.md`.
+
+  **`deliver` is the only step that reaches outside this machine**, and it does
+  three things at once whose consequences differ sharply: committing is local
+  and revertible, pushing is public, opening an MR notifies people. So never
+  offer it as a bare word — spell the effects out where the human answers:
+
+  ```
+  deliver starten?
+  - commit auf feature/412-login (Message aus dem fertigen Diff)
+  - push nach origin
+  - MR gegen main öffnen — mergen tust du selbst
+
+  [⏎ ja / nur committen / noch nicht]
+  ```
 
 - **`designer`** — presentation only: styling, layout, typography. Never logic,
   never user flow. Onto an existing branch.
