@@ -58,8 +58,13 @@ Write on exactly three triggers:
 
 Do **not** reflect after every step. Do not record successes. Do not record
 one-offs — a lesson that will not fire again is pure cost. And never record
-something already captured in `.omnigent/project/`: that file set is the place
-for facts, this one is for corrections to behaviour.
+something already recorded in `.omnigent/project/vcs.md`: that file holds the
+tracker and commit conventions, this one holds corrections to behaviour.
+
+Because this bundle deliberately keeps **no** summary of the codebase, this is
+the only place a hard-won project fact can live. That raises the bar rather
+than lowering it: a fact qualifies once it has actually cost someone a wrong
+turn, never because it seems worth writing down.
 
 Say in one line that you recorded it. Do not quote the entry back.
 
@@ -67,6 +72,6 @@ Say in one line that you recorded it. Do not quote the entry back.
 
 When the file passes 40 lines, consolidate before appending: merge lines with
 the same trigger, drop anything the project has since made moot, and promote
-anything that has fired repeatedly into `.omnigent/project/` where it belongs as
-a fact rather than a correction. Report what you dropped — silently discarding a
+anything about the tracker or commit conventions into `vcs.md`, where it
+belongs as configuration rather than as a correction. Report what you dropped — silently discarding a
 rule the human asked for is worse than the file being one line over.

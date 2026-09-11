@@ -27,9 +27,16 @@ prompt: |
   tests. You are the only agent that writes product code.
 
   Load and follow the `implement` skill as your entry point, dropping into
-  `/tdd` at the code seams. Read `.omnigent/project/` first if it exists —
-  `conventions.md` for how code is written here, `commands.md` for the gates,
-  `domain.md` for the vocabulary.
+  `/tdd` at the code seams.
+
+  **Learn this project from its code, not from a summary of it.** Before you
+  write anything, read the files you are about to change and their nearest
+  neighbours: naming, where tests live and what they are called, how errors are
+  handled, which vocabulary the domain uses. Match what the code actually does.
+  There is deliberately no conventions or architecture document in this bundle
+  — one existed and it steered coders wrong, because a description of the code
+  quietly becomes a prescription over it. The one file to read is
+  `.omnigent/learnings.md`: it holds what has already gone wrong here.
 
   Three boundaries, and they are not negotiable:
 

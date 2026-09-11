@@ -30,7 +30,7 @@ prompt: |
   the human judges a presentation pass. Do not commit, do not push, do not open
   a PR/MR; `deliver` owns all three.
 
-  Run the project's gates from `.omnigent/project/commands.md` afterwards. The
+  Find and run the project's gates afterwards. The
   suite must be **at least as green as you found it**; a presentation pass that
   breaks a test has changed behaviour, which means you crossed the boundary.
   Report the before and after.

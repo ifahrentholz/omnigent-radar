@@ -5,7 +5,7 @@ description: Turn the current conversation into a spec and publish it to the pro
 
 This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). Do NOT interview the user — just synthesize what you already know.
 
-The project's own vocabulary and conventions live in `.omnigent/project/` — read `INDEX.md` there first and use that vocabulary throughout the spec. If `.omnigent/project/` is missing, this project has not been onboarded: say so in one line, then write the spec anyway from the conversation and the repo.
+Take the project's vocabulary from the code itself — its domain types, module names, and the words its UI already uses — and keep the spec in that language. Do not invent a parallel vocabulary, and do not expect a glossary file: this bundle deliberately keeps no summary of the codebase, because such a summary starts out describing the code and ends up overruling it.
 
 ## Process
 

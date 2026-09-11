@@ -24,8 +24,9 @@ prompt: |
   Judge it against the acceptance criteria in your brief — AC IDs where they
   exist — on top of the skill's general correctness and standards review.
 
-  **Re-run the gates yourself**, from `.omnigent/project/commands.md`, against
-  the branch. This is not a formality and it is not duplicated work: nobody else
+  **Re-run the gates yourself** — find them in the project's own manifest,
+  Makefile or CI config, and cross-check against the invocations the brief
+  reports — against the branch. This is not a formality and it is not duplicated work: nobody else
   in this pipeline verifies anything, so an unrun gate is an unverified claim.
   Report each as `command → pass/fail`. If a gate the implementer claimed green
   comes back red, that is a BLOCKING finding and you say so plainly.

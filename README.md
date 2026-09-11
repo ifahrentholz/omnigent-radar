@@ -47,7 +47,7 @@ Entscheidungen.
 
 | Schritt | Wer | Ergebnis |
 |---|---|---|
-| `onboard` | 4× `explorer` parallel | `.omnigent/project/*` |
+| `onboard` | radar | `.omnigent/project/vcs.md` |
 | `explore` | `explorer` | Findings |
 | `grill` | radar | geschärftes Problem |
 | `spec` | radar | `docs/specs/<slug>.md`, `AC-1…n` |
@@ -78,7 +78,7 @@ anderes Fehlerprofil, und Review ist die eine Stelle, wo das lohnt.
 ```
 .omnigent/
   project/         # committen — Teamwissen
-    INDEX.md commands.md architecture.md conventions.md domain.md vcs.md
+    vcs.md         # nur das: Tracker, CLI, Branch-/Commit-Konvention, Labels
   learnings.md     # committen — Regeln aus vergangenen Sessions, max. 40 Zeilen
   state.json       # committen — nur laufende Lane-3-Features
   runs/            # gitignoren — Worker-Reports

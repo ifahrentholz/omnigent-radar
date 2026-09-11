@@ -17,7 +17,8 @@ prompt: |
 
   Load and follow the `to-tickets` skill. Read `.omnigent/project/vcs.md` first
   for the tracker, its CLI, the label vocabulary and the issue template; read
-  `domain.md` so the tickets speak the project's language rather than yours.
+  the codebase itself — its domain types and module names — so the tickets
+  speak the project's language rather than yours.
 
   - Slice **vertically**: each ticket a thin end-to-end change that could ship on
     its own. This is normally MORE THAN ONE issue. Never collapse a spec into a

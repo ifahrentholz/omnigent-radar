@@ -35,7 +35,7 @@ Look for the originating spec, in this order:
 
 ### 3. Identify the standards sources
 
-Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md`.
+Anything in the repo that documents how code should be written, such as `CODING_STANDARDS.md` or `CONTRIBUTING.md` — and, above those, **the surrounding code itself**. Where a document and the code disagree, the code is what this project actually does; report the divergence as a finding rather than enforcing the document.
 
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
@@ -112,8 +112,10 @@ be wrong. What follows is ordered by how objectively it can be established.
    unreviewed by definition.
 2. **Changed code no acceptance criterion covers.** Map each hunk to `AC-1…n`.
    What maps to nothing was never specified, so nobody agreed it should exist.
-3. **Files the project itself calls dangerous** — the danger-zones section of
-   `.omnigent/project/architecture.md`.
+3. **Files git says are fragile** — derive it rather than guess: generated or
+   vendored trees, migration directories, anything holding secrets, and files
+   with an unusual density of past fixes
+   (`git log --format= --name-only --grep=fix | sort | uniq -c | sort -rn`).
 
 **Heuristic — weaker, still far better than a hunch:**
 

@@ -10,11 +10,11 @@ Use `/tdd` where possible, at pre-agreed seams.
 Stay inside the scope the brief names. Do not refactor or wander unprompted — a
 change nobody asked for is a change nobody reviewed.
 
-Run the project's own gates, as recorded in `.omnigent/project/commands.md`:
-typecheck and single test files regularly while you work, the full suite once at
-the end. Report every gate you ran as `command → pass/fail`. If that file does
-not exist, use what the repo tells you and say in your result that the gates
-were guessed.
+Find the project's own gates yourself — `package.json` scripts, a Makefile,
+the CI config — and run them: typecheck and single test files regularly while
+you work, the full suite once at the end. Report every gate as
+`command → pass/fail` with the exact invocation, since the reviewer reuses it.
+If a gate you expected does not exist, say so rather than inventing one.
 
 Create or switch to the task branch if your brief names one, but **do not
 commit**. Leave your work in the working tree.

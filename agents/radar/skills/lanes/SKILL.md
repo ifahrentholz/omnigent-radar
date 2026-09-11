@@ -73,7 +73,7 @@ Then report as usual: one line of result, one line proposing the next step
 
 | Step | Worker | `purpose` | Braucht | Liefert | Default-next |
 |---|---|---|---|---|---|
-| `onboard` | 4× `explorer`, parallel | explore | — | `.omnigent/project/*` | — |
+| `onboard` | **radar itself** | — | — | `.omnigent/project/vcs.md` | — |
 | `explore` | `explorer` | explore | a question | findings report | — |
 | `grill` | **radar itself** | — | a rough idea | sharpened problem + scope | `spec` |
 | `spec` | **radar itself** | — | a sharpened problem | `docs/specs/<slug>.md` with `AC-1…n` | `tickets` |
@@ -84,6 +84,8 @@ Then report as usual: one line of result, one line proposing the next step
 | `deliver` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
 | `learn` | **radar itself** | — | a correction or a re-run | one line in `.omnigent/learnings.md` | — |
 
+`onboard` stays with radar because it is a handful of deterministic git
+commands, not investigation — a sub-agent would cost more than the step does.
 `grill`, `spec` and `learn` stay with radar because they are conversations with
 the human — a sub-agent runs autonomously and reports back through the inbox, so
 it cannot hold a dialogue. Everything else is delegated, always.
@@ -154,8 +156,8 @@ Rules:
 - **One decision per message.** If two things are open, ask the blocking one.
 - **A default marked `[⏎ …]`.** Bare Enter must be a valid, sensible answer.
 - **Mirror the human's language.** They write German, you answer German.
-- **Never ask what `.omnigent/project/` answers.** That file set exists to
-  retire questions permanently.
+- **Never ask what `vcs.md` answers.** It exists to retire those questions
+  permanently.
 - **Batch-ahead overrides all of this.** On "mach durch bis MR" / "alles" /
   "ohne Rückfragen", run the chain and surface only: spec approval, a blocked
   step, a failed worker, and the lane's end.
@@ -169,8 +171,8 @@ worker of a running fanout is **not** a step completion: read the inbox, keep
 the result, and **end the turn without saying anything**.
 
 This is not a style preference. On the first real run radar sent three separate
-messages during the onboarding fanout — "✓ architecture.md steht. 3 Explorer
-laufen noch." — three full turns of status nobody could act on. One of them even
+messages during a four-way fanout — "✓ eine Datei steht. 3 Explorer laufen
+noch." — three full turns of status nobody could act on. One of them even
 promised "ich melde mich, wenn alle vier durch sind" and then reported again
 immediately. Intermediate progress is not information; it is the chattiness this
 bundle exists to avoid.
@@ -188,7 +190,6 @@ Never freehand a brief. Every `sys_session_send` carries exactly this shape:
 
 ## Context
 <PATHS, never file contents — the worker has the repo>
-Projektwissen: .omnigent/project/INDEX.md
 Ticket: <URL or ->
 Spec: <path or ->
 Session: <deine eigene conversation_id — `sys_session_get_info` ohne Argument
@@ -234,8 +235,8 @@ contents into a brief pays for the same bytes twice.
 ## 5. Per-worker notes
 
 - **`coder`** — the only agent that writes product code, and it writes the tests
-  for its change. It runs the gates from `.omnigent/project/commands.md` and
-  reports them. It does *not* review itself, *not* commit, and *not* open the
+  for its change. It finds the project's gates itself and reports them with
+  their exact invocations. It does *not* review itself, *not* commit, and *not* open the
   MR.
 
   **It leaves the work uncommitted on purpose.** Omnigent's changed-files view
