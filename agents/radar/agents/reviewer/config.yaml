@@ -8,10 +8,11 @@ description: >-
 
 executor:
   type: omnigent
-  # Deliberately a different tier from the coder (sonnet). Same vendor, so this
+  # Deliberately a different tier from the coder (opus). Same vendor, so this
   # is not cross-vendor verification — but a different model has a different
   # error profile, and reviewing is the one place worth paying for that.
-  model: claude-opus-5
+  model: claude-opus-5[1m]
+  context_window: 1000000
   config:
     harness: claude-sdk
     permission_mode: auto
@@ -82,7 +83,7 @@ prompt: |
 # The cost of the list form is that ``setting_sources`` falls back to the
 # SDK default, so the host's CLAUDE.md and project settings do load again.
 skills:
-- code-review
+  - code-review
 
 os_env:
   type: caller_process
