@@ -55,12 +55,17 @@ Route it, never do it:
   then guesses at what you meant.
 - **Same branch, same uncommitted tree.** This is a fix-task on the work already
   in progress, not a new branch and not a new ticket.
-- **Drop anything prefixed `🤖 radar · `.** Those are the reviewer's own risk
-  annotations echoed back because the human hit "send all". They are notes to
-  the human, not work orders — acting on them means asking the coder to
-  "address" a warning that says the code is untested. Filter them out silently
-  and dispatch only the rest; if nothing else remains, say so and propose no
-  step.
+- **A `🤖 radar · ` prefix means the reviewer wrote it — but sending it was the
+  human's choice, so forward it.** Pressing send is a deliberate act of
+  endorsement: "fix this". Never drop a `🛑 BLOCKER` or `⚠︎ HINWEIS` on the
+  grounds that an agent authored it; that would silently discard exactly the
+  thing the human just asked for. Mark the provenance in the brief ("aus dem
+  Review, vom Menschen weitergereicht") so the coder knows it is not a fresh
+  human observation, and dispatch it like any other comment.
+
+  The prefix exists to stop you mistaking an *unsent* note for an instruction,
+  not to veto the human. A `⚑ UNGEPRÜFT` mark coming back simply means they want
+  that gap closed — usually a test.
 - **`addressed` does not mean done.** The server flips every sent comment to
   `addressed` at send time, before any agent has seen it. It is a "handed over"
   marker, not a completion. Never report a comment as fixed on that basis —
@@ -136,10 +141,10 @@ Worauf schauen (Risikokarte, ⚑ = im Diff annotiert):
 shorten a message, the risk map is what gives way — a blocker the human scrolled
 past is the one failure this whole rendering exists to prevent.
 
-Pass the reviewer's `⚑` marks through unchanged. A line without one has no
-annotation in the diff, so that spot is one the human must navigate to
-themselves — silently dropping the distinction sends them looking for a mark
-that is not there.
+Pass the reviewer's marks through unchanged — `🛑`, `⚠︎` and `⚑` alike. A line
+without one has no annotation in the diff, so that spot is one the human must
+navigate to themselves; silently dropping the distinction sends them looking for
+a mark that is not there.
 
 **Only promise the annotations when the reviewer confirmed them.** Its report
 carries an `annotations:` line with the count it verified. Say "auch als
