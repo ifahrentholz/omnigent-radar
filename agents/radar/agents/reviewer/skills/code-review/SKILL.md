@@ -129,9 +129,25 @@ be wrong. What follows is ordered by how objectively it can be established.
 7. **Security-shaped surface:** auth, crypto, input parsing, path handling,
    shell invocation, SQL.
 
-**At most eight annotations, ranked.** A map that marks everything marks
-nothing. If more qualify, keep the highest classes and say in your report how
-many you dropped.
+## What gets annotated, and in what order
+
+Three kinds of mark go into the diff, and the **order you post them in is part
+of the design** — a cap or a failed POST must never cost you a blocker:
+
+| Mark | What | How many |
+|---|---|---|
+| `🛑 BLOCKER` | a BLOCKING finding: the contract is unmet, or the code is wrong | **every single one**, posted FIRST |
+| `⚠︎ HINWEIS` | a NON-BLOCKING finding | every one, posted second |
+| `⚑ UNGEPRÜFT` | a risk-map entry: unreviewed by construction | third, up to a total of ~10 marks |
+
+Blockers are uncapped because a blocker you left unmarked is worse than ten
+marks too many — it is the one thing the human must not miss. If there are more
+than six, that is itself the finding: say in your report that the change is not
+close, rather than papering the diff with flags.
+
+The risk map is what gets trimmed when the total runs long. A diff that marks
+everything marks nothing, so keep the highest classes and say how many you
+dropped.
 
 ## Posting them
 
@@ -141,24 +157,32 @@ it; never inline JSON into the curl command.
 
 ```bash
 cat > /tmp/ann.json <<'JSON'
-{"path": "src/game/logic.ts",
- "body": "🤖 radar · ungetestet: step() behandelt hier den Wrap-Fall, kein Test deckt ihn ab.",
- "anchor_content": "if (next.x < 0)",
- "start_index": 812, "end_index": 827}
+{"path": "src/persist/store.ts",
+ "body": "🤖 radar · 🛑 BLOCKER — liest `stored.match.setsWon` für jeden Datensatz; vor dem Rename gespeicherte Matches haben das Feld nicht und werfen hier einen TypeError. Verletzt AC-5.",
+ "anchor_content": "stored.match.setsWon.A",
+ "start_index": 3812, "end_index": 3834}
 JSON
 curl -sS -X POST "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
   -H 'Content-Type: application/json' --data @/tmp/ann.json
 ```
 
+**The body always starts `🤖 radar · ` and then the mark**, in that order and
+at the very front. Two separate reasons, and both matter:
+
+- The `🤖 radar · ` prefix is what tells the orchestrator this is its own note
+  and not a work order. The server records no author in single-user mode, so
+  without it your annotation is indistinguishable from one the human wrote, and
+  their "send all annotations to the agent" action would ship your warnings
+  back to the coder as instructions.
+- The mark is what makes a blocker findable in a list of twelve. It is an
+  emoji plus an uppercase word on purpose: no severity field exists on the
+  comment API, and the mark must survive whether or not the view renders
+  Markdown or truncates the body.
+
 `start_index` / `end_index` are **character offsets in the file**, not line
 numbers. Compute them exactly — find the anchor text and take its real offset;
 do not estimate. `anchor_content` is what survives if the offsets drift, so
 always set it.
-
-**Every body starts with `🤖 radar · ` followed by the class.** The server
-records no author in single-user mode, so without that prefix your annotation
-is indistinguishable from one the human wrote — and their "send all annotations
-to the agent" action would ship your own notes back as a work order.
 
 ## Check that they landed, and say so
 
@@ -181,10 +205,14 @@ always first, and a leading `⚑` on exactly those lines whose annotation you
 confirmed landed:
 
 ```
+🛑 src/persist/store.ts:88 — BLOCKER: TypeError auf Altdaten, verletzt AC-5
+⚠︎ docs/adr/0008.md:13 — verweist auf gelöschte SetsOverviewScreen.tsx
 ⚑ src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
-⚑ src/persist/store.ts:88 — Datenformat: Altdaten möglich
-  src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
+   src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
 ```
+
+The mark on a line means the annotation for it **landed**; a line without one
+has no mark in the diff. Same rule as before, now carrying severity too.
 
 Without the per-line mark a partial result is useless: "2 von 5 gepostet"
 tells the human that three places have no mark, but not WHICH three — and

@@ -123,11 +123,18 @@ different thing from the findings: findings say what is wrong, the map says
 where nobody has checked. Keep them apart in the message.
 
 ```
-Worauf schauen (Risikokarte, 3 Stellen · ⚑ = im Diff annotiert):
+Findings (🛑 blockierend · ⚠︎ Hinweis — Marke = im Diff annotiert):
+🛑 src/persist/store.ts:88 — TypeError auf Altdaten, verletzt AC-5
+⚠︎ docs/adr/0008.md:13 — verweist auf gelöschte SetsOverviewScreen.tsx
+
+Worauf schauen (Risikokarte, ⚑ = im Diff annotiert):
 ⚑ src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
-⚑ src/persist/store.ts:88 — Datenformat: geänderte Struktur, Altdaten möglich
-  src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
+   src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
 ```
+
+**Blocking findings come first, always, and never get trimmed.** If you have to
+shorten a message, the risk map is what gives way — a blocker the human scrolled
+past is the one failure this whole rendering exists to prevent.
 
 Pass the reviewer's `⚑` marks through unchanged. A line without one has no
 annotation in the diff, so that spot is one the human must navigate to

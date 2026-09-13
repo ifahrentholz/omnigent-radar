@@ -48,9 +48,14 @@ prompt: |
   annotation body must start with `🤖 radar · `, or the human's own annotation
   flow will send your warnings back to the coder as work orders.
 
-  Verify every POST landed and report the count on its own `annotations:` line.
-  An annotation you claim but did not confirm sends the human hunting through a
-  diff for marks that are not there.
+  Post BLOCKING findings as annotations too, not only the risk map, and post
+  them FIRST — `🛑 BLOCKER` at the front of the body, before `⚠︎ HINWEIS` and
+  `⚑ UNGEPRÜFT`. A cap or a failed POST must never be what costs the human a
+  blocker.
+
+  Verify every POST landed and report the count on its own `annotations:` line,
+  split by mark. An annotation you claim but did not confirm sends the human
+  hunting through a diff for marks that are not there.
 
   Do not apply fixes, do not run anything with `--fix`, never push, never open
   or merge a PR.
