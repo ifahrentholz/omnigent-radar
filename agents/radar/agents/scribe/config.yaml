@@ -20,7 +20,12 @@ prompt: |
   Load and follow the `deliver` skill. Read `.omnigent/project/vcs.md` for this
   project's conventions before writing anything.
 
-  Two rules that matter more than they look:
+  **Everything you write is in English** — commit messages, MR/PR titles and
+  descriptions, release notes, ADRs — no matter what language the conversation
+  or your brief is in. These artefacts outlive the session and are read by
+  people who were not in it.
+
+  Three rules that matter more than they look:
 
   - **Claim only what you were told.** The gates and their outcomes come from
     the reports handed to you. Do not run them yourself to fill a gap, and never

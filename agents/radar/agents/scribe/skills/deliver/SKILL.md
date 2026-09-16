@@ -90,21 +90,30 @@ pasted a terminal, not written a description.**
 
 ### The body
 
-Fill the project's own template when it has one. Otherwise exactly this, in the
-language the project's existing MRs and commits use — and consistently, not
-English headings over German prose:
+**Write it in English. Always.** Commit messages and MR/PR descriptions are
+English regardless of the language of the conversation, the ticket, or the
+repository's own history. They outlive the session and are read by people who
+were not in it, future agents included. A German chat does not make a German
+commit message correct — and where the repo's existing history is German, yours
+is still English: do not switch to match it, and do not remark on the difference.
+
+Match the project's *structural* convention: Conventional Commits if it uses
+them, the ticket ID in the subject if its subjects carry one. The structure is
+the project's; the language is English.
+
+Fill the project's own template when it has one. Otherwise exactly this:
 
 ```markdown
-## Was sich ändert
+## What changed
 
-<2–4 Sätze in der Sprache des Lesers. Was kann man jetzt, was vorher nicht.
-Keine Dateiliste — die steht im Diff.>
+<2-4 sentences in the reader's terms: what can they do now that they could not
+before. No file list — that is what the diff is for.>
 
-## Warum
+## Why
 
-<Eine Zeile, plus der Ticket-Link. Das Ticket nicht nacherzählen.>
+<One line, plus the ticket link. Do not restate the ticket.>
 
-## Verifiziert
+## Verified
 
 | Gate | Ergebnis |
 |---|---|
@@ -112,19 +121,18 @@ Keine Dateiliste — die steht im Diff.>
 | `pnpm vitest run` | pass (8/8) |
 | `pnpm eslint .` | pass |
 
-<Quelle nennen: "laut coder" / "vom reviewer unabhängig nachgefahren".
-Selbst ausführen tust du nichts, und was dir niemand berichtet hat,
-behauptest du nicht.>
+<Name the source: "per the coder" / "re-run independently by the reviewer".
+You run nothing yourself, and claim no gate nobody reported to you.>
 
-## Worauf zuerst schauen
+## What to look at first
 
-<Offene Findings des Reviews, je eine Zeile `file:line — Aussage`.
-Wenn keine: "Review: approve, keine offenen Findings.">
+<Open findings from the review, one line each: `file:line — claim`.
+If none: "Review: approve, no open findings.">
 
 Closes #<n>
 ```
 
-`Closes #<n>` steht **genau einmal**, am Ende. Nicht zusätzlich unter „Warum".
+`Closes #<n>` appears **exactly once**, at the end.
 
 ### Read it back
 

@@ -101,15 +101,27 @@ explicit yes. Never infer it from a ticket that merely sounds visual.
 ## 3. The ask format
 
 After every completed step: the result, then the next step as a question.
-Then stop. The shape is in radar's prompt under "Reporting"; the cap is eight
-lines and the question is always last, on its own line.
+Then stop. The shape and the content budget are in radar's prompt under
+"Reporting" — at most eight list items across all sections, one sentence of
+prose per section, and the question last on its own line after a blank one.
 
-```
-✓ implement → Branch feature/412-login · 4 Dateien geändert
-Gates: tsc · vitest 12/12 · eslint — alle grün (laut coder)
+```markdown
+**✓ implement** → Branch `feature/412-login` · 4 Dateien
 
-review anhängen? [⏎ ja / nein, direkt deliver]
+**Gates** — alle grün (laut coder)
+- `pnpm tsc --noEmit`
+- `pnpm vitest run` (12/12)
+- `pnpm eslint .`
+
+**review anhängen?**
+
+[⏎ ja / nein, direkt deliver]
 ```
+
+Note what makes this work: every gate is a **list item**, and there is a
+**blank line** between blocks. A single newline is not a line break —
+CommonMark folds those lines into one paragraph, which is exactly how a report
+turns into an unreadable run of text.
 
 ### Findings belong in the message, not behind a link
 
@@ -120,22 +132,27 @@ makes them scroll and correlate, which defeats the point of asking at all.
 - **Every blocking finding**, one line each: `file:line — die Aussage`.
 - **Every non-blocking finding**, same shape.
 - **Nitpicks as a count only**, plus the report path.
-- More than eight finding lines: keep the blocking ones in full and replace the
-  rest with `+N weitere → <report>`.
+- Over eight items across ALL sections combined: keep every blocking one and
+  end the section with `- +N weitere → <report>`.
 
 The **risk map** is rendered the same way, under its own heading, and it is a
 different thing from the findings: findings say what is wrong, the map says
 where nobody has checked. Keep them apart in the message.
 
-```
-Findings (🛑 blockierend · ⚠︎ Hinweis — Marke = im Diff annotiert):
-🛑 src/persist/store.ts:88 — TypeError auf Altdaten, verletzt AC-5
-⚠︎ docs/adr/0008.md:13 — verweist auf gelöschte SetsOverviewScreen.tsx
+```markdown
+**Findings** — Marke = im Diff annotiert
+- 🛑 `src/persist/store.ts:88` — TypeError auf Altdaten, verletzt AC-5
+- ⚠︎ `docs/adr/0008.md:13` — verweist auf gelöschte `SetsOverviewScreen.tsx`
 
-Worauf schauen (Risikokarte, ⚑ = im Diff annotiert):
-⚑ src/game/logic.ts:41 — ungetestet: Wrap-Zweig von keinem Test berührt
-   src/cli/args.ts:12 — Signatur: parseArgs() öffentlich geändert
+**Worauf schauen** — Risikokarte, 4 Stellen
+- ⚑ `src/game/logic.ts:41` — ungetestet: Wrap-Zweig von keinem Test berührt
+- `src/cli/args.ts:12` — Signatur `parseArgs()` öffentlich geändert
+- +2 weitere → `.omnigent/runs/review-412/report.md`
 ```
+
+Each finding is its own list item. Never glue them together with `·` or run
+them into the section label — that is the single most common way this comes out
+unreadable.
 
 **Blocking findings come first, always, and never get trimmed.** If you have to
 shorten a message, the risk map is what gives way — a blocker the human scrolled

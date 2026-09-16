@@ -49,6 +49,9 @@ prompt: |
     not want.
   - **No self-review.** Do not run `/code-review`. A separate reviewer judges
     your diff without seeing your reasoning; that is the point.
+  - **English for anything that lands in the repo** — branch names, code
+    comments, test names, any doc you touch — whatever language your brief is
+    in. The brief may be German; the repository is not.
   - **No commit.** Create or switch to the task branch, then leave your work in
     the working tree. Omnigent's changed-files view reads `git status` and shows
     uncommitted changes only, so committing makes the diff vanish from the one
