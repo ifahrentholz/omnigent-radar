@@ -166,37 +166,52 @@ curl -sS -X POST "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
   -H 'Content-Type: application/json' --data @/tmp/ann.json
 ```
 
-### How long an annotation may be
+### How an annotation body is rendered — measured, not assumed
 
-**One sentence. At most two, and the second only if it carries evidence that
-changes what the human does.** Hard ceiling: 200 characters including the
-prefix.
+The changed-files view shows comment bodies as **plain text with newlines
+preserved**. This was verified by posting a probe and reading the result, so
+build on it exactly:
 
-An annotation is a POINTER, not a report. It is pinned to one line of code and
-read in a narrow gutter, and the reader is scanning a diff, not settling in.
-Everything that does not fit belongs in your run report, which the orchestrator
-links.
+- **Newlines work.** A single `\n` is a real line break, and a blank line is a
+  real gap. Use them.
+- **Markdown does not.** `**bold**` and `` `code` `` render their delimiters as
+  visible noise. Never use them. Write identifiers bare — `storybook-export`,
+  not `` `storybook-export` ``.
+- **A leading `- ` reads fine** as a plain dash, so a short list is legitimate
+  when there genuinely are several separate facts.
+- **Long bodies collapse behind a "Show more".**
 
-Do not try to format your way out of the limit. Do not use lists, headings or
-line breaks inside a body: whether the changed-files view renders Markdown is
-not established, so a `- ` may well appear literally and a newline may collapse
-to a space. A single well-built sentence survives every renderer.
+That last point decides the shape.
+
+### The first line carries the whole claim
+
+Whatever is collapsed is not read. So the FIRST LINE must stand alone as the
+complete finding — mark, location in words, and what is wrong — in **at most
+about 150 characters**. Anything after it is detail the reader opens only if
+the first line made them want to.
 
 ```
-✗ 🤖 radar · ⚑ UNGEPRÜFT — Das Story-Template wurde umgeschrieben
+🤖 radar · ⚑ UNGEPRÜFT — Story wird von nichts gerendert, storybook-export
+läuft erst nach dem Merge
+
+Template umgeschrieben: Settings-Flag-Zuweisung und generisches Arg raus.
+tsc und tslint prüfen nur die Typen.
+```
+
+Against the version this replaces — one 330-character paragraph whose point
+("nichts rendert die Story") sat in the third sentence, behind two sentences of
+evidence, and would have been hidden by the collapse:
+
+```
+✗ 🤖 radar · ⚡ UNGEPRÜFT — Das Story-Template wurde umgeschrieben
   (Settings-Flag-Zuweisung raus, generisches Arg raus). tsc und tslint prüfen
-  die Typen, aber gerendert wird die Story von nichts: `storybook-export` läuft
-  laut .gitlab-ci.yml nur im `pages`-Job auf `develop`, also erst nach dem
-  Merge.                                                    (330 Zeichen, 4 Sätze)
-
-✓ 🤖 radar · ⚑ UNGEPRÜFT — Story-Template umgeschrieben, aber nichts rendert
-  die Story: `storybook-export` läuft nur im `pages`-Job auf `develop`, also
-  erst nach dem Merge.                                      (165 Zeichen, 1 Satz)
+  die Typen, aber gerendert wird die Story von nichts: storybook-export läuft
+  laut .gitlab-ci.yml nur im pages-Job auf develop, also erst nach dem Merge.
 ```
 
-The short one keeps every fact that changes a decision and drops the ones that
-only prove you did the work. That is the test: cut it until removing one more
-word would change what the human does.
+**Total ceiling: 400 characters.** Evidence that does not fit belongs in your
+run report, which the orchestrator links. An annotation is a pointer, not a
+report: it is read in a narrow gutter by someone scanning a diff.
 
 ### The prefix and the mark are literal
 
@@ -207,11 +222,12 @@ produced `⚡` instead of `⚑`, which defeats scanning for a mark and breaks an
 filter that matches on one. Two separate reasons for the prefix, and both
 matter:
 
-- The `🤖 radar · ` prefix is what tells the orchestrator this is its own note
-  and not a work order. The server records no author in single-user mode, so
-  without it your annotation is indistinguishable from one the human wrote, and
-  their "send all annotations to the agent" action would ship your warnings
-  back to the coder as instructions.
+- The `🤖 radar · ` prefix is what marks the note as yours. The server records
+  no author in single-user mode, and the view then attributes the comment to
+  **the human themselves** — a probe confirmed it renders under their own name
+  with Edit and Delete beside it. Without the prefix your annotation is
+  indistinguishable from one they wrote, and neither they nor the orchestrator
+  can tell the two apart.
 - The mark is what makes a blocker findable in a list of twelve. It is an
   emoji plus an uppercase word on purpose: no severity field exists on the
   comment API, and the mark must survive whether or not the view renders
