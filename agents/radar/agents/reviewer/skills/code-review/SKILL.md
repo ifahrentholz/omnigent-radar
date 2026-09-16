@@ -166,8 +166,46 @@ curl -sS -X POST "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
   -H 'Content-Type: application/json' --data @/tmp/ann.json
 ```
 
-**The body always starts `🤖 radar · ` and then the mark**, in that order and
-at the very front. Two separate reasons, and both matter:
+### How long an annotation may be
+
+**One sentence. At most two, and the second only if it carries evidence that
+changes what the human does.** Hard ceiling: 200 characters including the
+prefix.
+
+An annotation is a POINTER, not a report. It is pinned to one line of code and
+read in a narrow gutter, and the reader is scanning a diff, not settling in.
+Everything that does not fit belongs in your run report, which the orchestrator
+links.
+
+Do not try to format your way out of the limit. Do not use lists, headings or
+line breaks inside a body: whether the changed-files view renders Markdown is
+not established, so a `- ` may well appear literally and a newline may collapse
+to a space. A single well-built sentence survives every renderer.
+
+```
+✗ 🤖 radar · ⚑ UNGEPRÜFT — Das Story-Template wurde umgeschrieben
+  (Settings-Flag-Zuweisung raus, generisches Arg raus). tsc und tslint prüfen
+  die Typen, aber gerendert wird die Story von nichts: `storybook-export` läuft
+  laut .gitlab-ci.yml nur im `pages`-Job auf `develop`, also erst nach dem
+  Merge.                                                    (330 Zeichen, 4 Sätze)
+
+✓ 🤖 radar · ⚑ UNGEPRÜFT — Story-Template umgeschrieben, aber nichts rendert
+  die Story: `storybook-export` läuft nur im `pages`-Job auf `develop`, also
+  erst nach dem Merge.                                      (165 Zeichen, 1 Satz)
+```
+
+The short one keeps every fact that changes a decision and drops the ones that
+only prove you did the work. That is the test: cut it until removing one more
+word would change what the human does.
+
+### The prefix and the mark are literal
+
+**The body always starts `🤖 radar · ` and then the mark**, in that order and at
+the very front. Copy the three marks character for character — `🛑 BLOCKER`,
+`⚠︎ HINWEIS`, `⚑ UNGEPRÜFT`. They are not a style suggestion: a run has already
+produced `⚡` instead of `⚑`, which defeats scanning for a mark and breaks any
+filter that matches on one. Two separate reasons for the prefix, and both
+matter:
 
 - The `🤖 radar · ` prefix is what tells the orchestrator this is its own note
   and not a work order. The server records no author in single-user mode, so
