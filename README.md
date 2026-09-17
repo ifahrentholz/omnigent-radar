@@ -5,26 +5,50 @@ und delegiert die Schritte an dedizierte Claude-Sub-Agents. Er schreibt keinen
 Code, reviewt nicht und **verifiziert nichts** — Verifikation ist ein Schritt,
 den du dazunimmst, nicht etwas, das der Orchestrator hinter deinem Rücken tut.
 
+## Installieren
+
+```bash
+git clone git@github.com:ifahrentholz/omnigent-radar.git
+cd omnigent-radar && ./install.sh
+```
+
+Das Script prüft die Voraussetzungen (git, `omnigent`, ein konfigurierter
+Claude-Provider, `gh`/`glab`) und legt einen Symlink `radar` nach
+`~/.local/bin`. Anderes Ziel mit `--dir ~/bin`, rückgängig mit `--uninstall`.
+
+**Es fasst deine Shell-Config nicht an.** Ein Symlink in einem PATH-Verzeichnis
+wirkt in jeder Shell, ist eine Zeile zum Rückgängigmachen und kann keine
+Login-Shell zerschießen — anders als ein misslungener rc-Edit. Voraussetzung ist
+nur, dass das Zielverzeichnis auf dem PATH liegt; das Script sagt dir, wenn
+nicht.
+
+Omnigent selbst wird **nicht** mitinstalliert — siehe https://omnigent.ai/.
+
 ## Starten
 
 ```bash
-export PATH="$PATH:/pfad/zu/diesem/repo/bin"
-
 cd <dein-projekt>
 radar                    # interaktive Session
-radar --log              # dito, Transkript nach ~/.omnigent/logs/
 radar -p "frage"         # headless: ein Request, dann Ende
 ```
 
-radar läuft im aktuellen Working Directory, nicht in dem des Bundles.
+radar läuft im aktuellen Working Directory, nicht in dem des Bundles, und setzt
+`--log` von selbst (außer bei `-p`, wo Omnigent es ablehnt).
 
-**Du schreibst zuerst.** Omnigent kennt keinen agent-initiierten ersten Turn,
-und `-p` hilft dabei nicht: damit läuft Omnigent einmal headless durch und
-beendet sich (`cli.py`, `run_chat` — „runs one-shot and exits when
-`initial_message` is set"). Vorbelegen ginge nur mit `--resume`/`--continue`,
-was den Kontext der alten Konversation mitschleppt. radar führt seine **erste
-Antwort** deshalb mit dem Projektstatus an, statt ihn vorweg zu senden — eine
-Zeile, und nur wenn etwas nicht stimmt.
+**Du schreibst zuerst.** Omnigent kennt keinen agent-initiierten ersten Turn:
+mit `-p` läuft es einmal headless durch und beendet sich (`cli.py`, `run_chat` —
+„runs one-shot and exits when `initial_message` is set"). Vorbelegen ginge nur
+mit `--resume`/`--continue`, was den Kontext der alten Konversation mitschleppt.
+radar führt seine **erste Antwort** deshalb mit dem Projektstatus an, statt ihn
+vorweg zu senden.
+
+### Windows
+
+Derzeit nicht unterstützt, und ein PowerShell-Launcher wäre nicht der schwierige
+Teil: die Skills selbst fahren POSIX-Shell-Kommandos (`git log … | sort | uniq`,
+`grep`, `curl`), und radars `terminals:`-Block startet `bash`. Ein `.ps1` würde
+also starten und beim ersten `onboard` scheitern. Für Windows-Kolleg:innen ist
+**WSL** der pragmatische Weg — dort läuft das Bundle unverändert.
 
 ## Lanes
 

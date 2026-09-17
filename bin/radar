@@ -1,21 +1,42 @@
 #!/usr/bin/env bash
-# radar — start the routing orchestrator in the current project.
+# radar — start the routing orchestrator in the current directory.
 #
 #   cd <projekt> && radar        interaktive Session (du schreibst zuerst)
-#   radar --log                  dito, Transkript nach ~/.omnigent/logs/
 #   radar -p "frage"             HEADLESS: ein Request, dann Ende
 #
-# Zu -p: es setzt KEINE erste Nachricht in einem REPL ab. Omnigent läuft einmal
-# durch und beendet sich, sobald ein Prompt gesetzt ist (cli.py: "run_chat runs
-# one-shot and exits when initial_message is set"). Eine interaktive Session
-# lässt sich nur zusammen mit --resume/--continue vorbelegen, was den Kontext
-# der alten Konversation mitschleppt. Es gibt also keinen Weg, radar in einer
-# frischen Session zuerst sprechen zu lassen — er führt seine erste Antwort
-# stattdessen mit dem Projektstatus an, siehe "Session start" in
-# agents/radar/config.yaml.
-#
-# Alle Argumente gehen unverändert an `omnigent run`.
+# Alle Argumente gehen an `omnigent run` weiter. `--log` wird automatisch
+# gesetzt, AUSSER es ist ein Prompt dabei: mit -p läuft Omnigent headless durch
+# und lehnt --log ab ("only supported in interactive REPL mode").
 set -euo pipefail
 
-BUNDLE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/agents/radar"
-exec omnigent run "$BUNDLE" "$@"
+# Den Bundle-Pfad auch durch einen Symlink hindurch auflösen — installiert wird
+# als Symlink in ~/.local/bin, und macOS kennt kein `readlink -f`.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+BUNDLE="$(cd -P "$(dirname "$src")/.." && pwd)/agents/radar"
+
+if [ ! -f "$BUNDLE/config.yaml" ]; then
+  echo "radar: kein Bundle unter $BUNDLE — Repo unvollständig oder verschoben?" >&2
+  exit 1
+fi
+if ! command -v omnigent >/dev/null 2>&1; then
+  echo "radar: 'omnigent' ist nicht auf dem PATH. Siehe https://omnigent.ai/" >&2
+  exit 1
+fi
+
+# Kein cd: radar läuft im aktuellen Verzeichnis. Ohne Repo bleibt die
+# Changed-Files-Ansicht leer (sie liest `git status`), gestartet wird trotzdem.
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "radar: $PWD ist kein git-Repo — die Changed-Files-Ansicht bleibt leer." >&2
+fi
+
+for arg in "$@"; do
+  case "$arg" in
+    -p|--prompt|-p*|--prompt=*) exec omnigent run "$BUNDLE" "$@" ;;
+  esac
+done
+exec omnigent run "$BUNDLE" --log "$@"
