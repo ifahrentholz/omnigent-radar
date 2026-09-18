@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # radar — start the routing orchestrator in the current directory.
 #
-#   cd <projekt> && radar        interaktive Session (du schreibst zuerst)
-#   radar -p "frage"             HEADLESS: ein Request, dann Ende
+#   cd <project> && radar        interactive session (you speak first)
+#   radar -p "question"          HEADLESS: one request, then exit
 #
-# Alle Argumente gehen an `omnigent run` weiter. `--log` wird automatisch
-# gesetzt, AUSSER es ist ein Prompt dabei: mit -p läuft Omnigent headless durch
-# und lehnt --log ab ("only supported in interactive REPL mode").
+# All arguments are passed through to `omnigent run`. `--log` is added
+# automatically UNLESS a prompt is present: with -p, Omnigent runs headless and
+# rejects --log ("only supported in interactive REPL mode").
 set -euo pipefail
 
-# Den Bundle-Pfad auch durch einen Symlink hindurch auflösen — installiert wird
-# als Symlink in ~/.local/bin, und macOS kennt kein `readlink -f`.
+# Resolve the bundle path through a symlink too — installation puts a symlink in
+# ~/.local/bin, and macOS has no `readlink -f`.
 src="${BASH_SOURCE[0]}"
 while [ -L "$src" ]; do
   dir="$(cd -P "$(dirname "$src")" && pwd)"
@@ -20,18 +20,18 @@ done
 BUNDLE="$(cd -P "$(dirname "$src")/.." && pwd)/agents/radar"
 
 if [ ! -f "$BUNDLE/config.yaml" ]; then
-  echo "radar: kein Bundle unter $BUNDLE — Repo unvollständig oder verschoben?" >&2
+  echo "radar: no bundle at $BUNDLE — repository incomplete or moved?" >&2
   exit 1
 fi
 if ! command -v omnigent >/dev/null 2>&1; then
-  echo "radar: 'omnigent' ist nicht auf dem PATH. Siehe https://omnigent.ai/" >&2
+  echo "radar: 'omnigent' is not on your PATH. See https://omnigent.ai/" >&2
   exit 1
 fi
 
-# Kein cd: radar läuft im aktuellen Verzeichnis. Ohne Repo bleibt die
-# Changed-Files-Ansicht leer (sie liest `git status`), gestartet wird trotzdem.
+# No cd: radar runs in the current directory. Without a repository the
+# changed-files view stays empty (it reads `git status`); it starts regardless.
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  echo "radar: $PWD ist kein git-Repo — die Changed-Files-Ansicht bleibt leer." >&2
+  echo "radar: $PWD is not a git repository — the changed-files view will stay empty." >&2
 fi
 
 for arg in "$@"; do
