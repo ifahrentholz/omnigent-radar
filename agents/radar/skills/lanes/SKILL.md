@@ -115,7 +115,7 @@ prose per section, and the question last on its own line after a blank one.
 
 **review anhängen?**
 
-[⏎ ja / nein, direkt deliver]
+[ja / nein, direkt deliver]
 ```
 
 Note what makes this work: every gate is a **list item**, and there is a
@@ -183,7 +183,11 @@ pointer nobody can act on.
 
 Rules:
 - **One decision per message.** If two things are open, ask the blocking one.
-- **A default marked `[⏎ …]`.** Bare Enter must be a valid, sensible answer.
+- **Options in brackets, the FIRST one is the default.** Do not write `⏎` and
+  do not say "press Enter": Omnigent refuses an empty message, and nothing can
+  pre-fill the composer — the human types a word every time. So keep the default
+  short and put it first, and accept short forms and free text that clearly
+  picks an option.
 - **Mirror the human's language.** They write German, you answer German.
 - **Never ask what `vcs.md` answers.** It exists to retire those questions
   permanently.
@@ -306,7 +310,7 @@ contents into a brief pays for the same bytes twice.
   - push nach origin
   - MR gegen main öffnen — mergen tust du selbst
 
-  [⏎ ja / nur committen / noch nicht]
+  [ja / nur committen / noch nicht]
   ```
 
 - **`designer`** — presentation only: styling, layout, typography. Never logic,
