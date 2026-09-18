@@ -1,159 +1,238 @@
-# radar — ein routender Omnigent-Orchestrator
+# radar
 
-`radar` klassifiziert eine Anfrage, schlägt die **günstigste passende Lane** vor
-und delegiert die Schritte an dedizierte Claude-Sub-Agents. Er schreibt keinen
-Code, reviewt nicht und **verifiziert nichts** — Verifikation ist ein Schritt,
-den du dazunimmst, nicht etwas, das der Orchestrator hinter deinem Rücken tut.
+A routing orchestrator for [Omnigent](https://omnigent.ai/). It classifies what
+you ask for, hands the work to specialised sub-agents, and gets out of the way.
 
-## Installieren
+**Every step is an entry point, and every step is skippable.** Ask it to fix a
+typo and it fixes a typo. Ask it to build a feature and it will interview you,
+write a spec, cut tickets, and work them one at a time — but only because you
+said yes at each point, never because a pipeline demanded it.
+
+That constraint is the whole design. Its predecessor enforced a fixed order —
+idea → spec → approval → ticket → code → test → review → docs → PR — with a
+policy that refused any code change lacking an approved spec and a linked
+ticket. Rigorous, and unusable for the small tasks that make up most days. radar
+keeps the same stages available and makes every one of them optional.
+
+Three properties follow from it, and they are what make radar different from
+"an agent that writes code":
+
+- **It writes nothing itself.** No code, no review, no verification. It
+  classifies, dispatches, reports, and asks. When a worker says the tests pass,
+  radar relays that — it does not go and check. Verification is a step you opt
+  into, not something happening quietly on your behalf.
+- **It proposes the cheapest option that fits.** Escalating costs you one word;
+  ceremony you did not need costs a spec and twenty minutes.
+- **It leaves the diff uncommitted until you say otherwise**, so you can read
+  and annotate it in Omnigent's changed-files view while it is still open.
+
+## Install
 
 ```bash
 git clone git@github.com:ifahrentholz/omnigent-radar.git
 cd omnigent-radar && ./install.sh
 ```
 
-Das Script prüft die Voraussetzungen (git, `omnigent`, ein konfigurierter
-Claude-Provider, `gh`/`glab`) und legt einen Symlink `radar` nach
-`~/.local/bin`. Anderes Ziel mit `--dir ~/bin`, rückgängig mit `--uninstall`.
+The script checks prerequisites and links `bin/radar` into `~/.local/bin`.
+Elsewhere with `--dir ~/bin`, undo with `--uninstall`.
 
-**Es fasst deine Shell-Config nicht an.** Ein Symlink in einem PATH-Verzeichnis
-wirkt in jeder Shell, ist eine Zeile zum Rückgängigmachen und kann keine
-Login-Shell zerschießen — anders als ein misslungener rc-Edit. Voraussetzung ist
-nur, dass das Zielverzeichnis auf dem PATH liegt; das Script sagt dir, wenn
-nicht.
+**It does not touch your shell config.** A symlink in a PATH directory works in
+every shell, is one line to undo, and cannot break a login shell the way a
+failed rc edit can. The script tells you if the target is not on your PATH.
 
-Omnigent selbst wird **nicht** mitinstalliert — siehe https://omnigent.ai/.
+You need, and the script verifies:
 
-## Starten
+| | |
+|---|---|
+| `git` | radar works only inside git repositories |
+| `omnigent` | not installed for you — see [omnigent.ai](https://omnigent.ai/) |
+| a Claude provider | `omnigent setup` if none is configured |
+| `gh` / `glab` | only for the tracker your project actually uses |
+
+Then, in any project:
 
 ```bash
-cd <dein-projekt>
-radar                    # interaktive Session
-radar -p "frage"         # headless: ein Request, dann Ende
+cd your-project
+radar
 ```
 
-radar läuft im aktuellen Working Directory, nicht in dem des Bundles, und setzt
-`--log` von selbst (außer bei `-p`, wo Omnigent es ablehnt).
-
-**Du schreibst zuerst.** Omnigent kennt keinen agent-initiierten ersten Turn:
-mit `-p` läuft es einmal headless durch und beendet sich (`cli.py`, `run_chat` —
-„runs one-shot and exits when `initial_message` is set"). Vorbelegen ginge nur
-mit `--resume`/`--continue`, was den Kontext der alten Konversation mitschleppt.
-radar führt seine **erste Antwort** deshalb mit dem Projektstatus an, statt ihn
-vorweg zu senden.
+**You speak first.** Omnigent has no agent-initiated turn — with `-p` it runs
+one request headless and exits, and seeding an interactive session is only
+possible via `--resume`, which drags the old conversation along. So radar leads
+its *first reply* with the project's status instead of greeting you.
 
 ### Windows
 
-Derzeit nicht unterstützt, und ein PowerShell-Launcher wäre nicht der schwierige
-Teil: die Skills selbst fahren POSIX-Shell-Kommandos (`git log … | sort | uniq`,
-`grep`, `curl`), und radars `terminals:`-Block startet `bash`. Ein `.ps1` würde
-also starten und beim ersten `onboard` scheitern. Für Windows-Kolleg:innen ist
-**WSL** der pragmatische Weg — dort läuft das Bundle unverändert.
+Not supported, and a PowerShell launcher is not the hard part: the skills run
+POSIX shell commands and radar's `terminals:` block starts `bash`. A `.ps1`
+would start cleanly and fail at the first step, which is worse than none. **WSL**
+runs the bundle unchanged.
 
 ## Lanes
 
-| Lane | Wann | Kette |
-|---|---|---|
-| **0 · chat** | Frage, kein Änderungswunsch | antworten, ggf. ein `explore` |
-| **1 · quick** | kleine, benannte Änderung, kein Ticket | `implement` → `deliver?` |
-| **2 · ticket** | Ticket-Referenz vorhanden | `implement` → `review` → `deliver` |
-| **3 · feature** | neue Fähigkeit, Scope offen | `grill` → `spec` → `tickets` → pro Ticket Lane 2 |
+A lane is a suggested chain through the steps. radar picks one, proposes it in a
+line, and you accept or redirect.
 
-Bei Zweifel wird die **günstigere** Lane vorgeschlagen. Hochstufen kostet dich
-ein Wort; unnötige Zeremonie kostet eine Spec und zwanzig Minuten.
+```mermaid
+flowchart LR
+    classDef ask fill:#ffffff,stroke:#b0bec5,color:#455a64
+    classDef l0  fill:#eceff1,stroke:#90a4ae,color:#263238
+    classDef l3  fill:#e8eaf6,stroke:#5c6bc0,color:#1a237e
+    classDef l2  fill:#e0f2f1,stroke:#26a69a,color:#004d40
 
-Nach jedem Schritt: eine Zeile Ergebnis, eine Zeile Vorschlag, Stopp.
-`[⏎ ja / nein / …]` — blankes Enter ist immer eine gültige Antwort. Wer
-durchziehen will, sagt „mach durch bis MR"; dann hält radar nur noch an echten
-Entscheidungen.
+    q(["a question"]):::ask --> chat["answer, maybe one explore"]:::l0
+    s(["a small change"]):::ask --> implement
+    t(["a ticket"]):::ask --> implement
+    f(["a new feature"]):::ask --> grill
 
-## Schritte
+    grill:::l3 --> spec:::l3 --> tickets:::l3 --> implement:::l2
+    implement --> review:::l2 --> deliver:::l2
+```
 
-| Schritt | Wer | Ergebnis |
+The dashed arrows are the point: **you can enter at any step.** Nothing requires
+what came before it — radar will say a spec is missing and then do the work
+anyway if that is what you want.
+
+| Lane | You say something like | Chain | Leaves state behind? |
+|---|---|---|---|
+| **0 · chat** | *"how does the auth flow work?"* | answer, or one `explore` | no |
+| **1 · quick** | *"bump the lockfile"*, *"fix this typo"* | `implement` → `deliver?` | no |
+| **2 · ticket** | *"implement #412"*, *"take this on"* | `implement` → `review` → `deliver` | no |
+| **3 · feature** | *"I want to build X"* | `grill` → `spec` → `tickets` → then lane 2 per ticket | yes |
+
+**When it is ambiguous, radar proposes the cheaper lane.** You can always say
+"make it a feature"; you cannot get the twenty minutes back.
+
+Two things are not lanes and can be asked for at any time: `onboard` (derive the
+project's tracker conventions, once) and `learn` (record a lesson).
+
+### After every step
+
+One result, one proposal, then it stops:
+
+```
+✓ implement → branch feature/412-login · 4 files
+
+Gates — all green (per coder)
+- pnpm tsc --noEmit
+- pnpm vitest run (12/12)
+
+add review?
+
+[⏎ yes / no, straight to deliver]
+```
+
+Bare Enter takes the default. If you would rather not be asked, say *"go through
+to the MR"* — radar then stops only at real decisions: spec approval, a blocked
+step, a failed worker.
+
+## Steps
+
+| Step | Runs on | Produces |
 |---|---|---|
 | `onboard` | radar | `.omnigent/project/vcs.md` |
-| `explore` | `explorer` | Findings |
-| `grill` | radar | geschärftes Problem |
-| `spec` | radar | `docs/specs/<slug>.md`, `AC-1…n` |
-| `tickets` | `ticketer` | Issues in Dependency-Reihenfolge |
-| `implement` | `coder` | Branch, Diff, Gates gelaufen |
-| `design` | `designer` (opt-in) | Presentation-only Diff |
-| `review` | `reviewer` | Findings vs. AC, Gates nachgefahren |
-| `deliver` | `scribe` | Commit, Push, MR/PR offen |
-| `learn` | radar | eine Zeile in `.omnigent/learnings.md` |
+| `explore` | `explorer` | findings report |
+| `grill` | radar | a sharpened problem and scope |
+| `spec` | radar | `docs/specs/<slug>.md` with `AC-1…n` |
+| `tickets` | `ticketer` | issues in dependency order |
+| `implement` | `coder` | branch, **uncommitted** diff, gates run |
+| `design` | `designer` (opt-in) | presentation-only diff |
+| `review` | `reviewer` | findings, gates re-run, risk map |
+| `deliver` | `scribe` | commit, push, MR/PR opened |
+| `learn` | radar | one line in `.omnigent/learnings.md` |
 
-## Worker
+`grill`, `spec` and `learn` stay with radar because they are conversations — a
+sub-agent runs autonomously and reports back, so it cannot hold a dialogue.
 
-| Worker | Modell | darf pushen | Read-only |
+## Workers
+
+| Worker | Model | May push | Read-only |
 |---|---|---|---|
-| `explorer` | sonnet | – | faktisch (schreibt genau eine Datei) |
-| `coder` | **opus [1m]** | – | – |
-| `reviewer` | **opus** | – | ja (`read_only_os`) |
-| `ticketer` | sonnet | – | – |
-| `scribe` | sonnet | **ja** | – |
-| `designer` | sonnet | – | – |
+| `explorer` | opus [1m] | – | in effect (`worktree_guard`) |
+| `coder` | opus [1m] | – | – |
+| `reviewer` | opus [1m] | – | yes (`read_only_os`) |
+| `ticketer` | opus [1m] | – | – |
+| `scribe` | sonnet | **yes** | – |
+| `designer` | opus [1m] | – | – |
 
-Nur `scribe` darf pushen — strukturell, nicht nur per Prompt. Der `reviewer`
-läuft bewusst auf einem anderen Tier als der `coder`: gleicher Vendor, aber ein
-anderes Fehlerprofil, und Review ist die eine Stelle, wo das lohnt.
+**Only `scribe` may push** — enforced by policy, not by asking nicely. The
+`reviewer` never sees the coder's report or reasoning, only the branch, the diff
+and the acceptance criteria: with a single vendor, context isolation is where
+review independence comes from.
 
-## Was im Zielprojekt entsteht
+## Review you can act on
+
+Human review capacity is the bottleneck in agent-assisted work, not agent
+output. So `review` produces two things.
+
+**Findings** — what is wrong. Blocking ones are posted into the diff as
+annotations marked `🛑 BLOCKER`, always first, never trimmed.
+
+**A risk map** — where nobody has checked. "Critical" here means *unreviewed by
+construction*, not "looks important": changed code no test exercises, changed
+code no acceptance criterion covers, files git says are fragile. The distinction
+matters, because a model's sense of what is important tracks where it was
+already being careful — which is exactly where it is least likely to be wrong.
+
+Both land in the changed-files view as comments, so you can read them at the
+code, annotate back, and have radar route your notes to the coder.
+
+## What appears in your project
 
 ```
 .omnigent/
-  project/         # committen — Teamwissen
-    vcs.md         # nur das: Tracker, CLI, Branch-/Commit-Konvention, Labels
-  learnings.md     # committen — Regeln aus vergangenen Sessions, max. 40 Zeilen
-  state.json       # committen — nur laufende Lane-3-Features
-  runs/            # gitignoren — Worker-Reports
+  project/vcs.md    # commit — tracker, CLI, branch and commit conventions
+  learnings.md      # commit — rules from past sessions, capped at ~40 lines
+  state.json        # commit — only for a lane-3 feature in flight
+  runs/             # gitignore — worker reports
 ```
 
-Ins Zielprojekt gehört dazu:
+That is all of it. There is deliberately **no summary of your codebase** — no
+architecture, conventions or domain file. An earlier version wrote them and the
+results got worse: a description of the code turns into a prescription over it,
+it is stale the moment it is written, and it replaces the agent's own reading
+with someone else's compression. Whoever needs a fact about the code reads the
+code.
 
-```gitignore
-.omnigent/runs/
-```
+**The bundle is the method; `.omnigent/` is the knowledge.** The method is
+shared across projects and lives here. The knowledge is project-specific and
+lives there.
 
-**Das Bundle ist die Methode, `.omnigent/` ist das Wissen.** Die Methode ist
-projektübergreifend und lebt hier; das Wissen ist projektspezifisch und lebt
-dort.
+## Self-improvement
 
-## Die zwei Kostenhebel
+Two levels, and telling them apart is the point:
 
-**Der Return-Block** in jeder Dispatch-Brief (siehe `skills/lanes/SKILL.md` §4):
-Worker schreiben ihren vollen Report nach `.omnigent/runs/<id>/report.md` und
-geben radar acht Zeilen Struktur zurück. Ohne das trägt der Orchestrator das
-komplette Reasoning jedes Workers für den Rest der Session mit — das kostet mehr
-als jede Modellwahl.
+- **A project rule** → `.omnigent/learnings.md` in the target repo. Something
+  true about *that* codebase, written only once it has already cost someone a
+  wrong turn.
+- **A method change** → a prompt or skill edit in this bundle, committed here.
 
-**`skills: none` überall.** Nichts wird vom Host entdeckt; jeder Skill liegt im
-Bundle des Agents, der ihn ausführt. Sonst wird die komplette Host-Skill-Liste in
-jeden einzelnen Turn injiziert.
+Only the second is real self-improvement. Filing a method problem as a project
+rule fixes it in one repo and lets it recur in every other one.
 
-## Selbstverbesserung
-
-Zwei Ebenen, und die Unterscheidung ist der Punkt:
-
-- **Projektregel** → `.omnigent/learnings.md` im Zielrepo. Etwas über *diesen*
-  Codebase.
-- **Bundle-Änderung** → ein Prompt- oder Skill-Edit hier, committet. Etwas über
-  *die Methode*.
-
-Nur das Zweite ist echte Selbstverbesserung. Eine Methodenschwäche in eine
-Projektdatei zu schreiben behebt sie in einem Repo und lässt sie in allen anderen
-wiederkehren. Details in `skills/learn/SKILL.md`.
-
-## Struktur
+## Layout
 
 ```
-bin/radar                        # Launcher (setzt die erste Nachricht ab)
+install.sh                  # prerequisite check + symlink
+bin/radar                   # launcher; resolves the bundle through the symlink
 agents/radar/
-  config.yaml                    # Orchestrator
-  skills/                        # radars eigene, interaktive Skills
-    lanes/                       #   ← das Routing-Verfahren, Kern des Bundles
+  config.yaml               # the orchestrator
+  skills/
+    lanes/                  #   ← the routing procedure, the core of the bundle
     onboard/  learn/
     grilling/  grill-me/  grill-with-docs/  to-spec/  domain-modeling/
   agents/<worker>/
     config.yaml
-    skills/                      # gebündelt beim Worker, der sie ausführt
+    skills/                 # bundled with the worker that runs them
 ```
+
+Every skill a worker runs is bundled with it and named in that agent's `skills:`
+allowlist. Nothing is discovered from the host, so the bundle is copy-and-go —
+and the allowlist is what makes bundled skills loadable at all: `skills: none`
+resolves to an empty allowlist and rejects every skill, including the bundle's
+own.
+
+## Licence
+
+MIT, except `agents/radar/agents/designer/skills/frontend-design/`, which is
+Apache-2.0 and carries its own `LICENSE.txt`.
