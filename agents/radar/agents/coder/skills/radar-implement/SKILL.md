@@ -1,11 +1,11 @@
 ---
-name: implement
+name: radar-implement
 description: "Implement a piece of work from a spec, a ticket, or a plain instruction."
 ---
 
 Implement the work described in your brief.
 
-Use `/tdd` where possible, at pre-agreed seams.
+Use `/radar-tdd` where possible, at pre-agreed seams.
 
 Stay inside the scope the brief names. Do not refactor or wander unprompted — a
 change nobody asked for is a change nobody reviewed.

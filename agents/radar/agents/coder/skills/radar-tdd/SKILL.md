@@ -1,5 +1,5 @@
 ---
-name: tdd
+name: radar-tdd
 description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
 ---
 
@@ -35,4 +35,4 @@ Ask: "What's the public interface, and which seams should we test?"
 - **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
 - **One slice at a time.** One seam, one test, one minimal implementation per cycle.
 - **Every guard shown red once.** A test or check that encodes a _rule_ rather than one behaviour must be demonstrated failing before you trust it: introduce a deliberate violation, run the check, capture the command and its non-zero exit, then remove the violation. Delete the rule it protects and it must go red as well. Put that command and its output in the PR. A guard whose red state you never saw is not evidence — and reporting it as verified is worse than having no guard at all.
-- **Refactoring is not part of the loop.** It belongs to the review stage (see the `code-review` skill), not the red → green implementation cycle.
+- **Refactoring is not part of the loop.** It belongs to the review stage (see the `radar-code-review` skill), not the red → green implementation cycle.

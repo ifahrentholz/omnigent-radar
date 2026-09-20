@@ -1,6 +1,6 @@
 ---
-name: grill-me
+name: radar-grill-me
 description: A relentless interview to sharpen a plan or design.
 ---
 
-Run a `/grilling` session.
+Run a `/radar-grilling` session.
