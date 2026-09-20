@@ -1,5 +1,5 @@
 ---
-name: onboard
+name: radar-onboard
 description: "radar's one-time project setup — derives the VCS and tracker conventions from git itself into .omnigent/project/vcs.md and sets the .gitignore entry. Deliberately writes no summary of the codebase; architecture, conventions and domain language are read from the code at the moment they are needed. Load when .omnigent/project/vcs.md is missing."
 ---
 
@@ -37,7 +37,7 @@ another name.
 someone a wrong turn — the e2e suite needs a docker compose stack up first,
 there is no build script and `expo export` is the working substitute — that is
 a **learning**, not project documentation. One line in `.omnigent/learnings.md`
-with the trigger first. See the `learn` skill. The difference is that a
+with the trigger first. See the `radar-learn` skill. The difference is that a
 learning earns its place by having already gone wrong once.
 
 ## The one thing to derive

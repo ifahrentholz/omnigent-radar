@@ -190,11 +190,34 @@ Two things worth knowing:
   send it, before any agent has seen it. Only the coder's result says it is
   fixed.
 
+## Your project's own skills
+
+If the repository you are working in ships skills of its own under
+`.claude/skills/`, radar and its workers can use them. They appear in the same
+listing as the bundle's, and any agent can invoke them by name. Nothing needs
+configuring: a project that writes its deploy procedure or its house test
+conventions down as a skill gets that procedure followed here.
+
+This is also why every skill in this bundle is named `radar-…`. The Skill tool
+resolves an exact name before a plugin-qualified one, so a project skill called
+`implement` would otherwise be invoked in place of the bundle's implementer. The
+prefix keeps the two apart in both directions — yours cannot shadow ours, and
+ours cannot shadow yours.
+
+Two consequences worth knowing:
+
+- **Your personal `~/.claude/skills/` load as well.** There is no way to take the
+  project tier without the user tier: Omnigent does not expose the setting that
+  separates them. A large personal collection costs tokens in every turn, and
+  makes radar behave a little differently on your machine than on a colleague's.
+- **A project skill is instructions, not a sandbox.** Read one before you trust
+  it in a repository you did not write.
+
 ## Extending it
 
 The six workers are a starting set, not a fixed roster. Everything you add stays
-inside the bundle — nothing is read from the host, so a colleague who clones the
-repo gets your additions with it.
+inside the bundle, so a colleague who clones the repo gets your additions with
+it.
 
 **Add a worker:**
 
@@ -203,25 +226,30 @@ repo gets your additions with it.
 2. Add `<name>` to `tools.agents` in `agents/radar/config.yaml`. That list is
    what registers it — without the entry the directory is inert.
 3. Tell the orchestrator when to use it: a row in the step menu of
-   `agents/radar/skills/lanes/SKILL.md`, and a line in its per-worker notes.
+   `agents/radar/skills/radar-lanes/SKILL.md`, and a line in its per-worker notes.
 
 **Add a skill:**
 
-1. `…/skills/<name>/SKILL.md` with `name:` and `description:` frontmatter —
-   under `agents/radar/skills/` for the orchestrator, or under
-   `agents/radar/agents/<worker>/skills/` for a worker.
-2. **Name it in that agent's `skills:` list.** It is an allowlist, not a hint.
+1. `…/skills/radar-<name>/SKILL.md`, with `name: radar-<name>` and a
+   `description:` in its frontmatter — under `agents/radar/skills/` for the
+   orchestrator, or under `agents/radar/agents/<worker>/skills/` for a worker.
+   Keep the prefix; it is what stops a same-named skill in the host project or
+   in `~/.claude/skills/` from taking its place.
+2. Reference it from that agent's prompt, or from another skill. There is no
+   list to add it to — every agent runs `skills: all`.
 
 Two traps worth knowing before you hit them:
 
-- `skills: none` resolves to an empty allowlist and rejects **every** skill
-  call, the bundle's own included. Always list them by name.
-- `disable-model-invocation: true` in a skill's frontmatter blocks explicit
+- **`skills:` has no middle setting.** `none` resolves to an empty allowlist and
+  rejects *every* skill call, the bundle's own included. A list of names is an
+  allowlist too, and it has no wildcard, so it hides the host project's skills
+  completely. `all` is the only value that admits both.
+- **`disable-model-invocation: true`** in a skill's frontmatter blocks explicit
   `Skill` calls too, not just implicit triggering — the error says "ask the user
   to run /<name> themselves", and a headless worker has no user to ask.
 
-A worker sees only its own bundled skills. The orchestrator's do not reach the
-workers, and one worker's do not reach another.
+A worker sees its own bundled skills plus the host's. The orchestrator's bundled
+skills do not reach the workers, and one worker's do not reach another.
 
 ## What appears in your project
 
@@ -258,9 +286,10 @@ bin/radar                   # launcher; resolves the bundle through the symlink
 agents/radar/
   config.yaml               # the orchestrator
   skills/
-    lanes/                  #   ← the routing procedure, the core of the bundle
-    onboard/  learn/
-    grilling/  grill-me/  grill-with-docs/  to-spec/  domain-modeling/
+    radar-lanes/            #   ← the routing procedure, the core of the bundle
+    radar-onboard/  radar-learn/
+    radar-grilling/  radar-grill-me/  radar-grill-with-docs/
+    radar-to-spec/  radar-domain-modeling/
   agents/<worker>/
     config.yaml
     skills/                 # bundled with the worker that runs them
@@ -268,5 +297,5 @@ agents/radar/
 
 ## Licence
 
-MIT, except `agents/radar/agents/designer/skills/frontend-design/`, which is
+MIT, except `agents/radar/agents/designer/skills/radar-frontend-design/`, which is
 Apache-2.0 and carries its own `LICENSE.txt`.

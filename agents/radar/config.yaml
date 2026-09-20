@@ -63,24 +63,26 @@ tools:
   - scribe
   - designer
 
-# The bundle's own skills, named explicitly. This is an ALLOWLIST, not a
-# discovery hint, and naming them is what makes them loadable at all:
-# ``skills: none`` resolves to ``ClaudeAgentOptions.skills=[]`` on the
-# claude-sdk path, and an empty allowlist rejects every Skill call with
-# "not in this session's skills allowlist" — including the bundle's own.
-# A list keeps the model's skill listing limited to exactly these (so the
-# host's roster still stays out of every turn) while making them invokable.
-# The cost of the list form is that ``setting_sources`` falls back to the
-# SDK default, so the host's CLAUDE.md and project settings do load again.
-skills:
-- lanes
-- onboard
-- learn
-- grilling
-- grill-me
-- grill-with-docs
-- to-spec
-- domain-modeling
+# ``all`` — every skill the host offers, plus the bundle's own.
+#
+# The bundle's skills are all prefixed ``radar-`` and ride ``--plugin-dir``, so
+# the model sees them as ``<agent>:radar-<skill>``. The prefix is what makes
+# ``all`` safe: the Skill tool resolves an exact name before a plugin-qualified
+# one, so an unprefixed ``implement`` in the project's ``.claude/skills/`` or in
+# the user's ``~/.claude/skills/`` would otherwise be invoked in place of ours.
+#
+# The alternative — a list of names — is an ALLOWLIST, and it has no way to say
+# "and whatever this project ships": the CLI matches each entry exactly or as a
+# ``:<name>`` suffix, and wildcards are rejected at connect(). A list therefore
+# hides the host project's own skills completely, which is the thing this
+# setting exists to avoid. A project that ships ``.claude/skills/`` expects
+# those skills to be usable here.
+#
+# The price of ``all``: the user's personal ``~/.claude/skills/`` also enter the
+# listing, so the roster costs tokens every turn and differs between machines.
+# Omnigent does not expose ``setting_sources``, so "project yes, user no" is not
+# currently expressible.
+skills: all
 
 guardrails:
   # A day-long approval window: an ASK should outlive the human stepping away.
@@ -141,7 +143,7 @@ prompt: |
   3. **Report** what came out, **propose** the next step, and STOP. See
      "Reporting" below for the shape.
 
-  Load the `lanes` skill on your first turn of any task and follow it. The
+  Load the `radar-lanes` skill on your first turn of any task and follow it. The
   lanes, the step menu, the dispatch brief template, and the report contract all
   live there. Do not reconstruct them from memory and never freehand a brief.
 
@@ -212,7 +214,7 @@ prompt: |
 
   ## Workers
 
-  Six, all on the `claude-sdk` harness. Each is described in the `lanes` skill;
+  Six, all on the `claude-sdk` harness. Each is described in the `radar-lanes` skill;
   the short form:
 
   - `explorer` — read-only investigation, returns findings. purpose: explore.
@@ -303,7 +305,7 @@ prompt: |
 
   Never paste a worker's transcript back. Its full report is on disk at
   `.omnigent/runs/<id>/report.md`; link that, don't quote it. **Findings are
-  the exception** — see the `lanes` skill.
+  the exception** — see the `radar-lanes` skill.
   - **State no facts of your own.** Every number, status, and cause you report
     comes from a worker's result or a tool output. You measured nothing, so you
     claim nothing. "Der reviewer meldet 3 blockierende Findings" is fine; "wir
@@ -336,7 +338,7 @@ prompt: |
   **Ending a turn in case (c) means ending it SILENTLY.** No "ich melde mich,
   wenn…", no progress note, no "3 Explorer laufen noch". A turn whose only
   content is a status line about work still in flight is a wasted turn — see
-  "A fanout is ONE step" in the `lanes` skill.
+  "A fanout is ONE step" in the `radar-lanes` skill.
 
   **Call `sys_read_inbox` once per wake, then act on what it gave you.** It
   drains what is waiting; calling it a second time in the same turn hands you

@@ -1,5 +1,5 @@
 ---
-name: learn
+name: radar-learn
 description: How radar records a lesson so it is not repeated — the two levels (project rule vs. bundle change), the strict line format, the hard size cap on `.omnigent/learnings.md`, and when consolidation is due. Load when the human corrects you, when a step had to be re-run, or when asked to record a learning.
 ---
 
