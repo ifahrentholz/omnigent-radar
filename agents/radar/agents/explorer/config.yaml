@@ -7,8 +7,16 @@ description: >-
 
 executor:
   type: omnigent
-  model: claude-opus-5[1m]
-  context_window: 1000000
+  # ROUTABLE: the pin is the FALLBACK, overridden per dispatch by ``args.model``
+  # (``radar-lanes`` §4c). Sonnet, not opus: the explorer is the most-dispatched
+  # worker in the bundle and the pins measured 4.6x more expensive per run on
+  # opus than on sonnet — so a router outage degrades to the cheaper baseline
+  # the router has to beat, not to the expensive one.
+  #
+  # ``context_window`` stays 200k, the largest window shared by every model in
+  # this worker's menu. See the note in the coder's config.
+  model: claude-sonnet-5
+  context_window: 200000
   config:
     harness: claude-sdk
     # claude-sdk's default, set explicitly: allow-lists the Omnigent MCP tools so

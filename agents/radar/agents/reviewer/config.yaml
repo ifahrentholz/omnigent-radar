@@ -8,9 +8,11 @@ description: >-
 
 executor:
   type: omnigent
-  # Deliberately a different tier from the coder (opus). Same vendor, so this
-  # is not cross-vendor verification — but a different model has a different
-  # error profile, and reviewing is the one place worth paying for that.
+  # NOT ROUTABLE — and this pin is a decision, not a default. The reviewer's
+  # gate re-run is the only verification in the bundle; a cheaper reviewer buys
+  # savings by weakening the one step that catches everything else. radar never
+  # sends ``args.model`` for this worker (``radar-lanes`` §4c lists it as
+  # excluded), so the 1M window and its ``[1m]`` suffix stay paired here.
   model: claude-opus-5[1m]
   context_window: 1000000
   config:
