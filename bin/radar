@@ -3,10 +3,18 @@
 #
 #   cd <project> && radar        interactive session (you speak first)
 #   radar -p "question"          HEADLESS: one request, then exit
+#   radar --parallel             switch this project to parallel mode, then start
+#   radar --single               switch it back (the default), then start
 #
-# All arguments are passed through to `omnigent run`. `--log` is added
+# All other arguments are passed through to `omnigent run`. `--log` is added
 # automatically UNLESS a prompt is present: with -p, Omnigent runs headless and
 # rejects --log ("only supported in interactive REPL mode").
+#
+# --parallel / --single are consumed here, never forwarded: they write
+# .omnigent/mode, which radar reads on its first turn. The mode is a FILE and
+# not a flag because Omnigent passes no launch arguments through to an agent's
+# prompt, and because it has to be sticky per project — a lane-3 feature that
+# outlives a session must not change semantics when the next one starts.
 set -euo pipefail
 
 # Resolve the bundle path through a symlink too — installation puts a symlink in
@@ -33,6 +41,32 @@ fi
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   echo "radar: $PWD is not a git repository — the changed-files view will stay empty." >&2
 fi
+
+# Consume the mode flags before anything is forwarded.
+mode=""
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    --parallel) mode="parallel" ;;
+    --single)   mode="single" ;;
+    *) args+=("$arg") ;;
+  esac
+done
+
+if [ -n "$mode" ]; then
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "radar: --$mode needs a git repository; $PWD is not one." >&2
+    exit 1
+  fi
+  mkdir -p .omnigent
+  printf '%s\n' "$mode" > .omnigent/mode
+  echo "radar: mode = $mode  (.omnigent/mode)" >&2
+  if [ "$mode" = "parallel" ]; then
+    echo "radar: parallel mode drops the diff annotations — see README, 'Two modes'." >&2
+  fi
+fi
+
+set -- ${args[@]+"${args[@]}"}
 
 for arg in "$@"; do
   case "$arg" in

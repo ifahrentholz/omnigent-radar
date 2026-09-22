@@ -108,6 +108,85 @@ will not send an empty message. Short forms and free text both work. Say *"go
 through to the MR"* and it stops only at real decisions: spec approval, a
 blocked step, a failed worker.
 
+## Two modes
+
+One ticket at a time, or several at once. You set it per project, once:
+
+```bash
+radar --parallel      # several tickets at once, each in its own git worktree
+radar --single        # one at a time, in the checkout itself (the default)
+```
+
+Both write `.omnigent/mode` and then start normally. The flag is consumed by the
+launcher, never forwarded — Omnigent passes no launch argument through to an
+agent's prompt, and the mode has to outlive the session anyway.
+
+| | **single** (default) | **parallel** |
+|---|---|---|
+| Where a coder works | the checkout | `.omnigent/worktrees/<task>/` |
+| Tickets in flight | one | up to 6 per wave |
+| Diff in the changed-files view | yes | **no** |
+| Annotate the diff and send it back | yes | **no** |
+| Isolation between tasks | — | enforced by policy |
+| Conflicts surface | never (one branch) | when you merge |
+
+**Parallel mode loses the annotations, and that is not a detail.** Omnigent's
+changed-files view runs `git status` in the repository root, and git does not
+look inside a nested worktree — measured: a live worktree shows up as one
+untracked directory row and nothing else. So the review → annotate → fix loop
+described below is unavailable there. What you get instead is every finding
+rendered in chat, which is strictly less.
+
+Only `implement` changes. Lanes, classification, `grill`, `spec`, `tickets`,
+`review`, `deliver` and `learn` are identical in both modes.
+
+### Why a worktree needs a whole rendered config
+
+Measured on omnigent 0.14.0, and the one thing to know before changing any of
+this: **`os_env.cwd` does not work for a sub-agent.** `OMNIGENT_RUNNER_WORKSPACE`
+— the directory you started `radar` in — always wins, on every harness, and a
+child session carries no workspace of its own. Every worker runs in the
+repository root whatever its config says.
+
+So a worktree cannot be handed to a coder as a working directory. It is handed
+over as a **path prefix in the brief**, and what makes that safe is a guardrail
+policy naming that task's worktree. `guardrails` is per-spec and
+`sys_session_send` cannot carry one, so each parallel task gets a rendered
+config of its own, launched with `sys_session_create(config_path=…)`. That, and
+not the working directory, is what `spawn: true` is for.
+
+Three policies compose to the confinement, and none of them is sufficient alone:
+
+| policy | stops |
+|---|---|
+| `worktree_guard` | absolute and `~` paths |
+| `cel_policy` (rendered per task) | anything not starting with this task's worktree, and anything containing `..` |
+| `block_working_dir_changes` | `cd` / `pushd` / `git -C` out of the worktree, `bash -c` wrappers included |
+
+The second is what carries the task identity — `worktree_guard` alone happily
+allows a plain `src/foo.ts`, which lands in *your* checkout. And the pair is
+needed because `<worktree>/../../../etc/x` starts with the right prefix and
+normalises out of the tree; each policy misses it alone.
+
+**Two holes remain, both in the shell, both measured.** `echo x > ../../f` has
+no `cd` to gate, and `( cd /tmp; … )` is not unwrapped. Nothing at the policy
+layer closes them. The confinement is a guard against a coder that *wanders*,
+not against one that is determined — the prompt carries the rest.
+
+### The task toolbelt
+
+```bash
+radar-task.sh new 412              # worktree + branch + rendered config
+radar-task.sh list                 # what is true on disk, not what was recorded
+radar-task.sh teardown 412 --check # verdict only, changes nothing
+radar-task.sh teardown 412         # removes, or exits 3 and refuses
+```
+
+`teardown` refuses when the tree is dirty, when commits are on no remote (or, in
+a repository with no remote, on no default branch), or when it cannot establish
+either — **`unverifiable` refuses**, because "I could not check" must never read
+as "safe". Read the script's header before first use; it owns its own contract.
+
 ## Steps
 
 | Step | Runs on | Produces |
@@ -257,9 +336,17 @@ skills do not reach the workers, and one worker's do not reach another.
 .omnigent/
   project/vcs.md    # commit — branch naming, commit format, tracker, labels
   learnings.md      # commit — rules from past sessions, capped at ~40 lines
+  mode              # commit — single | parallel; missing means single
   state.json        # commit — only for a lane-3 feature in flight
+  .gitignore        # commit — keeps the three below out of git status
   runs/             # gitignore — worker reports
+  worktrees/        # gitignore — parallel mode: one per live task
+  tasks/            # gitignore — parallel mode: one rendered config per task
 ```
+
+`worktrees/` and `tasks/` are gitignored for a reason beyond tidiness: the
+changed-files view reads `git status`, so an untracked worktree would put one
+useless directory row in it per live task.
 
 That is all of it. There is deliberately **no summary of your codebase** — no
 architecture, conventions or domain file. An earlier version wrote them and
@@ -283,10 +370,13 @@ rule fixes it in one repo and lets it recur in every other one.
 ```
 install.sh                  # prerequisite check + symlink
 bin/radar                   # launcher; resolves the bundle through the symlink
+bin/radar-task.sh           # parallel mode: worktree, rendered config, teardown
 agents/radar/
   config.yaml               # the orchestrator
+  templates/coder.yaml      # parallel mode: per-task coder TEMPLATE
   skills/
     radar-lanes/            #   ← the routing procedure, the core of the bundle
+    radar-parallel/            #   ← the parallel-mode procedure
     radar-onboard/  radar-learn/
     radar-grilling/  radar-grill-me/  radar-grill-with-docs/
     radar-to-spec/  radar-domain-modeling/

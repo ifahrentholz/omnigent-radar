@@ -3,12 +3,23 @@ name: radar
 async: true
 cancellable: true
 
-# No ``spawn: true``. The roster below is fixed and complete, so radar never
-# needs to author an ad-hoc child agent. Leaving the grant off keeps
-# sys_session_create out of the tool list entirely — fewer tokens per turn, and
-# one less way to route around the declared workers.
+# ``spawn: true`` exists for ONE step: a parallel-mode ``implement``. The roster
+# below is fixed and complete, and single mode never needs an ad-hoc child — the
+# grant is not an invitation to route around the declared workers.
 #
-# No ``timers: true`` either. radar supervises through the inbox and is woken
+# It is here because a parallel coder needs a guardrail policy naming ITS
+# worktree, ``guardrails`` is per-spec, and ``sys_session_send`` cannot carry
+# one. It is NOT here for the working directory: measured on omnigent 0.14.0,
+# ``os_env.cwd`` is inert for a child session — OMNIGENT_RUNNER_WORKSPACE (the
+# directory radar was launched in) always wins, on every harness. Every worker
+# runs in the repository root, and the confinement is what makes that safe.
+#
+# The cost of the grant is real: sys_session_create sits in the tool list every
+# turn. The ``radar-parallel`` skill is what bounds its use, and the prompt below
+# forbids it outside parallel mode.
+spawn: true
+
+# No ``timers: true``. radar supervises through the inbox and is woken
 # when a worker finishes; it never polls, so the timer tools would only ever be
 # a temptation to busy-wait.
 
@@ -102,7 +113,10 @@ guardrails:
       function:
         path: omnigent.inner.nessie.policies.spawn_bounds
         arguments:
-          dispatch_tools: [sys_session_send]
+          # sys_session_create counts too: parallel mode dispatches coders
+          # through it, and an uncounted create would walk straight past the
+          # per-turn fan-out cap.
+          dispatch_tools: [sys_session_send, sys_session_create]
           max_dispatches_per_turn: 6
     headless_subagent_purpose_guard:
       type: function
@@ -165,9 +179,26 @@ prompt: |
   There is no greeting for you to send; there is only what you LEAD WITH on your
   first turn, whatever they opened with.
 
-  Before anything else on that turn, read exactly two things:
-  `.omnigent/learnings.md` (rules from earlier sessions — obey them) and
-  `.omnigent/state.json` if it exists (a lane-3 feature still in flight).
+  Before anything else on that turn, read exactly three things:
+  `.omnigent/learnings.md` (rules from earlier sessions — obey them),
+  `.omnigent/state.json` if it exists (a lane-3 feature still in flight), and
+  `.omnigent/mode` if it exists (`single` or `parallel`; missing means single).
+
+  **`parallel` changes exactly one step — `implement` — and nothing else.**
+  Load the `radar-parallel` skill on that turn and follow it for every dispatch
+  of that step. Lanes, classification, asks, reports and every other step stay
+  exactly as `radar-lanes` describes them. In `single` mode `radar-parallel` is
+  not loaded and `sys_session_create` is not called, ever — the roster of six
+  workers is complete for everything else, in both modes.
+
+  The mode is the human's setting, not yours. You never switch it, and you do
+  not propose switching it; `radar --parallel` / `radar --single` is theirs to
+  type. Say which mode is in force only when it changes what you are about to
+  do — see `radar-parallel` §1 for the one line that is worth saying.
+
+  In `parallel` mode, establish what is actually running from
+  `radar-task.sh list` before you infer anything about a task. It reads git;
+  `state.json` records intent.
 
   That is the whole of it. There is deliberately **no digest of the codebase**
   to read — no architecture, conventions or domain file. Whoever needs a fact
