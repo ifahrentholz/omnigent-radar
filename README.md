@@ -127,65 +127,32 @@ agent's prompt, and the mode has to outlive the session anyway.
 | Tickets in flight | one | up to 6 per wave |
 | Diff in the changed-files view | yes | **no** |
 | Annotate the diff and send it back | yes | **no** |
-| Isolation between tasks | — | enforced by policy |
 | Conflicts surface | never (one branch) | when you merge |
 
 **Parallel mode loses the annotations, and that is not a detail.** Omnigent's
 changed-files view runs `git status` in the repository root, and git does not
 look inside a nested worktree — measured: a live worktree shows up as one
 untracked directory row and nothing else. So the review → annotate → fix loop
-described below is unavailable there. What you get instead is every finding
-rendered in chat, which is strictly less.
+described below is unavailable there; every finding is rendered in chat instead,
+which is strictly less.
 
-Only `implement` changes. Lanes, classification, `grill`, `spec`, `tickets`,
-`review`, `deliver` and `learn` are identical in both modes.
+**There is no machinery behind it.** Same `coder`, same `sys_session_send`, same
+brief — several at once, each with `git worktree add` run first and the worktree
+path named in its brief. Only `implement` changes; every other step is identical
+in both modes. The whole procedure is one skill, `radar-parallel`.
 
-### Why a worktree needs a whole rendered config
+Nothing confines a coder to its worktree. It is a path prefix in the brief, the
+way Omnigent's own `polly` example does it. A coder that gets it wrong writes
+into the main checkout, which `git status` shows and which is recoverable.
 
-Measured on omnigent 0.14.0, and the one thing to know before changing any of
-this: **`os_env.cwd` does not work for a sub-agent.** `OMNIGENT_RUNNER_WORKSPACE`
-— the directory you started `radar` in — always wins, on every harness, and a
-child session carries no workspace of its own. Every worker runs in the
-repository root whatever its config says.
-
-So a worktree cannot be handed to a coder as a working directory. It is handed
-over as a **path prefix in the brief**, and what makes that safe is a guardrail
-policy naming that task's worktree. `guardrails` is per-spec and
-`sys_session_send` cannot carry one, so each parallel task gets a rendered
-config of its own, launched with `sys_session_create(config_path=…)`. That, and
-not the working directory, is what `spawn: true` is for.
-
-Three policies compose to the confinement, and none of them is sufficient alone:
-
-| policy | stops |
-|---|---|
-| `worktree_guard` | absolute and `~` paths |
-| `cel_policy` (rendered per task) | anything not starting with this task's worktree, and anything containing `..` |
-| `block_working_dir_changes` | `cd` / `pushd` / `git -C` out of the worktree, `bash -c` wrappers included |
-
-The second is what carries the task identity — `worktree_guard` alone happily
-allows a plain `src/foo.ts`, which lands in *your* checkout. And the pair is
-needed because `<worktree>/../../../etc/x` starts with the right prefix and
-normalises out of the tree; each policy misses it alone.
-
-**Two holes remain, both in the shell, both measured.** `echo x > ../../f` has
-no `cd` to gate, and `( cd /tmp; … )` is not unwrapped. Nothing at the policy
-layer closes them. The confinement is a guard against a coder that *wanders*,
-not against one that is determined — the prompt carries the rest.
-
-### The task toolbelt
-
-```bash
-radar-task.sh new 412              # worktree + branch + rendered config
-radar-task.sh list                 # what is true on disk, not what was recorded
-radar-task.sh teardown 412 --check # verdict only, changes nothing
-radar-task.sh teardown 412         # removes, or exits 3 and refuses
-```
-
-`teardown` refuses when the tree is dirty, when commits are on no remote (or, in
-a repository with no remote, on no default branch), or when it cannot establish
-either — **`unverifiable` refuses**, because "I could not check" must never read
-as "safe". Read the script's header before first use; it owns its own contract.
+A guarded version was built first and taken out again: per-task rendered agent
+configs carrying a CEL write-confinement policy. It worked in isolation, could
+not close the shell (`echo x > ../../f` has no `cd` to gate), and cost a
+hand-built agent spec per task — which is how it shipped with no `os_env` block
+and handed its first real coder an agent with no file tools at all. Thirteen
+times the code for a guarantee it could not give. The reasoning is kept in the
+PR that introduced this mode, in case a real incident ever justifies revisiting
+it.
 
 ## Steps
 
@@ -317,8 +284,16 @@ it.
 2. Reference it from that agent's prompt, or from another skill. There is no
    list to add it to — every agent runs `skills: all`.
 
-Two traps worth knowing before you hit them:
+Three traps worth knowing before you hit them:
 
+- **A spec without an `os_env:` block has no file tools at all.** Not a reduced
+  set — no `Bash`, `Read`, `Write`, `Edit`, `Grep` or `Glob`. The block's
+  *presence* is what gives an agent a filesystem, and its `cwd:` is close to
+  decoration: the runner's workspace (the directory `radar` was started in)
+  overrides it for every sub-agent, on every harness. Copy the block verbatim
+  from an existing worker even when its `cwd` looks pointless. An earlier
+  parallel-mode design left it out for exactly that reason and handed its first
+  coder an agent that could not read a file.
 - **`skills:` has no middle setting.** `none` resolves to an empty allowlist and
   rejects *every* skill call, the bundle's own included. A list of names is an
   allowlist too, and it has no wildcard, so it hides the host project's skills
@@ -338,15 +313,14 @@ skills do not reach the workers, and one worker's do not reach another.
   learnings.md      # commit — rules from past sessions, capped at ~40 lines
   mode              # commit — single | parallel; missing means single
   state.json        # commit — only for a lane-3 feature in flight
-  .gitignore        # commit — keeps the three below out of git status
+  .gitignore        # commit — keeps the two below out of git status
   runs/             # gitignore — worker reports
   worktrees/        # gitignore — parallel mode: one per live task
-  tasks/            # gitignore — parallel mode: one rendered config per task
 ```
 
-`worktrees/` and `tasks/` are gitignored for a reason beyond tidiness: the
-changed-files view reads `git status`, so an untracked worktree would put one
-useless directory row in it per live task.
+`worktrees/` is gitignored for a reason beyond tidiness: the changed-files view
+reads `git status`, so an untracked worktree would put one useless directory row
+in it per live task.
 
 That is all of it. There is deliberately **no summary of your codebase** — no
 architecture, conventions or domain file. An earlier version wrote them and
@@ -370,10 +344,8 @@ rule fixes it in one repo and lets it recur in every other one.
 ```
 install.sh                  # prerequisite check + symlink
 bin/radar                   # launcher; resolves the bundle through the symlink
-bin/radar-task.sh           # parallel mode: worktree, rendered config, teardown
 agents/radar/
   config.yaml               # the orchestrator
-  templates/coder.yaml      # parallel mode: per-task coder TEMPLATE
   skills/
     radar-lanes/            #   ← the routing procedure, the core of the bundle
     radar-parallel/            #   ← the parallel-mode procedure

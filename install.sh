@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
-# radar installer — links bin/radar and bin/radar-task.sh into a directory on
-# your PATH.
-#
-# Both, not just the launcher: radar runs with YOUR project as its working
-# directory, so a bundle-relative `bin/radar-task.sh` would not resolve there.
-# Parallel mode calls it by bare name, which means it has to be on PATH.
+# radar installer — links bin/radar into a directory on your PATH.
 #
 #   ./install.sh                 install (default target: ~/.local/bin)
 #   ./install.sh --dir ~/bin     install elsewhere
@@ -28,13 +23,10 @@ done
 
 ROOT="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LINK="$TARGET_DIR/radar"
-TASK_LINK="$TARGET_DIR/radar-task.sh"
 
 if [ "$MODE" = uninstall ]; then
-  for l in "$LINK" "$TASK_LINK"; do
-    if [ -L "$l" ]; then rm "$l"; echo "removed: $l"
-    else echo "nothing to remove: $l is not a symlink"; fi
-  done
+  if [ -L "$LINK" ]; then rm "$LINK"; echo "removed: $LINK"
+  else echo "nothing to remove: $LINK is not a symlink"; fi
   exit 0
 fi
 
@@ -87,16 +79,12 @@ done
 echo
 echo "Installation"
 mkdir -p "$TARGET_DIR"
-for l in "$LINK" "$TASK_LINK"; do
-  if [ -e "$l" ] && [ ! -L "$l" ]; then
-    echo "  ✗ $l exists and is not a symlink — please check it yourself." >&2
-    exit 1
-  fi
-done
+if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+  echo "  ✗ $LINK exists and is not a symlink — please check it yourself." >&2
+  exit 1
+fi
 ln -sfn "$ROOT/bin/radar" "$LINK"
 good radar "$LINK → $ROOT/bin/radar"
-ln -sfn "$ROOT/bin/radar-task.sh" "$TASK_LINK"
-good radar-task "$TASK_LINK → $ROOT/bin/radar-task.sh"
 
 case ":${PATH}:" in
   *":${TARGET_DIR}:"*) good PATH "$TARGET_DIR is on your PATH" ;;
