@@ -400,7 +400,7 @@ you remember from another project.
 | `ticketer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
 | `designer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
 | `scribe` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
-| **`reviewer`** | — **send no `args.model`, ever** — | | | `claude-opus-5-5[1m]` |
+| **`reviewer`** | — **send no `args.model`, ever** — | | | `claude-opus-5-5` |
 
 **`claude-sonnet-5` is the floor for the `coder`. There is no cheap column for
 it and there is not going to be one.** The coder is the only worker that writes
@@ -415,11 +415,11 @@ stand — land at sonnet or above. Nothing is enforcing that for you. **This is 
 rule you keep, not a gate that catches you**, which is exactly why it is written
 as an absolute rather than a preference.
 
-**The `reviewer` always runs `claude-opus-5-5[1m]`, and sending it no model is how
+**The `reviewer` always runs `claude-opus-5-5`, and sending it no model is how
 that is guaranteed.** Its spec pins that model; `args.model` is the only thing
 that can override a spec pin, so omitting it *is* the mechanism, not an absence
-of one. Omitting it also keeps the `[1m]` suffix paired with its 1M
-`context_window`, which a routed pick would silently break.
+of one. Omitting it also keeps its 1M `context_window` out of reach of a routed pick,
+which would silently break it.
 
 The reason it is pinned at all: its gate re-run is the only verification in this
 bundle, and a cheaper reviewer saves money by weakening the one step that

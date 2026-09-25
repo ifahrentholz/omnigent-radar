@@ -21,7 +21,7 @@ executor:
   # past what the model can hold. 200k is the largest window the whole menu
   # shares.
   #
-  # To restore the old behaviour: set ``claude-opus-5-5[1m]`` + ``1000000`` here
+  # To restore the old behaviour: set ``claude-opus-5-5`` + ``1000000`` here
   # and drop `coder` from the routable list in ``radar-lanes`` §4c. Both, or
   # neither — a 1M window under a routed menu is the trap described above.
   model: claude-opus-5-5
