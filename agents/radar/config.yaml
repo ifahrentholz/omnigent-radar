@@ -24,16 +24,27 @@ description: >-
 
 executor:
   type: omnigent
+  # Pinned, deliberately and against the cost argument. radar's cheap turns are
+  # cheap anyway; its expensive ones — classifying a request into the wrong lane,
+  # freehanding a brief, mis-routing a review comment — are expensive in work the
+  # human then has to undo. The orchestrator is the one seat where a wrong call
+  # costs more than the model does.
+  #
+  # An earlier version left this unpinned with ``smart_routing_harness: auto``,
+  # on the theory that ~90% of turns are trivial. Two things were wrong with it:
+  # the CLI cannot enable Smart Routing at all (``omnigent run --smart-routing``
+  # is removed; only the web UI sets ``cost_control_mode_override``), so the key
+  # was inert — and turn routing picks ONCE PER SESSION, not per turn, so it
+  # could never have made that call turn by turn either.
+  #
+  # Per-task model choice lives one level down instead: radar CHOOSES a model per
+  # WORKER per dispatch and sends it as ``args.model``. That path is runner-side
+  # and needs no router configured at all, which is why it works on a Claude
+  # subscription where a policy-LLM judge does not. See ``radar-lanes`` §4c.
+  model: claude-opus-5
   context_window: 200000
   config:
     harness: claude-sdk
-    # Deliberately NO model pin. ~90% of radar's turns are "classify, dispatch,
-    # summarize one line, ask one question" — trivial work that should run on a
-    # cheap model. The remaining ~10% (grill, spec) is worth a strong one.
-    # Smart routing makes that call per turn; a pin would pay for the strong
-    # model on every routing turn. The workers pin their own models, where the
-    # choice actually matters.
-    smart_routing_harness: auto
 
 os_env:
   type: caller_process
@@ -231,6 +242,20 @@ prompt: |
   Every `sys_session_send` MUST set `title` (a task label, never a vendor or
   agent name — `implement-412`, `review-412`, not `coder`) and `args.purpose`
   as listed above.
+
+  **Every worker but the `reviewer` runs on a model YOU choose per dispatch.**
+  Classify the brief's Task paragraph as SIMPLE / MODERATE / COMPLEX and send
+  the matching model from that worker's menu as `args.model`. The menus, the
+  classification signals and the reporting are in `radar-lanes` §4c. Three
+  absolutes from it, because they are the ones that cost real money when broken:
+
+  - **`claude-sonnet-5` is the floor for the `coder`.** Never `claude-fable-5`,
+    under any classification, however small the change looks. Nothing enforces
+    this — it is yours to keep.
+  - **Never send the `reviewer` a model.** Its gate re-run is the only
+    verification in this bundle.
+  - **Unsure is COMPLEX.** A tier too strong costs cents; a tier too cheap costs
+    a failed step and a re-run.
 
   ## Asking: one line, one default
 
