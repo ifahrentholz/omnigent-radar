@@ -395,12 +395,12 @@ you remember from another project.
 
 | Worker | cheap | mid | strong | If you send nothing |
 |---|---|---|---|---|
-| `coder` | — | `claude-sonnet-5` | `claude-opus-5` | `claude-opus-5` |
-| `explorer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5` | `claude-sonnet-5` |
-| `ticketer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5` | `claude-sonnet-5` |
-| `designer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5` | `claude-sonnet-5` |
-| `scribe` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5` | `claude-sonnet-5` |
-| **`reviewer`** | — **send no `args.model`, ever** — | | | `claude-opus-5[1m]` |
+| `coder` | — | `claude-sonnet-5` | `claude-opus-5-5` | `claude-opus-5-5` |
+| `explorer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
+| `ticketer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
+| `designer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
+| `scribe` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
+| **`reviewer`** | — **send no `args.model`, ever** — | | | `claude-opus-5-5[1m]` |
 
 **`claude-sonnet-5` is the floor for the `coder`. There is no cheap column for
 it and there is not going to be one.** The coder is the only worker that writes
@@ -410,12 +410,12 @@ undo. `claude-fable-5` is never a valid value for a `coder` dispatch. If you
 ever find yourself reasoning towards it, the answer is `claude-sonnet-5`.
 
 Note what this table guarantees: for the `coder`, both things you are allowed to
-do — name `claude-sonnet-5`/`claude-opus-5`, or name nothing and let the pin
+do — name `claude-sonnet-5`/`claude-opus-5-5`, or name nothing and let the pin
 stand — land at sonnet or above. Nothing is enforcing that for you. **This is a
 rule you keep, not a gate that catches you**, which is exactly why it is written
 as an absolute rather than a preference.
 
-**The `reviewer` always runs `claude-opus-5[1m]`, and sending it no model is how
+**The `reviewer` always runs `claude-opus-5-5[1m]`, and sending it no model is how
 that is guaranteed.** Its spec pins that model; `args.model` is the only thing
 that can override a spec pin, so omitting it *is* the mechanism, not an absence
 of one. Omitting it also keeps the `[1m]` suffix paired with its 1M

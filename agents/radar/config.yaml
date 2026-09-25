@@ -41,7 +41,7 @@ executor:
   # WORKER per dispatch and sends it as ``args.model``. That path is runner-side
   # and needs no router configured at all, which is why it works on a Claude
   # subscription where a policy-LLM judge does not. See ``radar-lanes`` §4c.
-  model: claude-opus-5
+  model: claude-opus-5-5
   context_window: 200000
   config:
     harness: claude-sdk
