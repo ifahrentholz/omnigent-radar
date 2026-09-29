@@ -128,15 +128,21 @@ conversations — a sub-agent runs autonomously and cannot hold a dialogue.
 
 ## Workers
 
-| Worker | Model | May push | Read-only |
-|---|---|---|---|
-| `explorer` | opus [1m] | – | in effect (`worktree_guard`) |
-| `coder` | opus [1m] | – | – |
-| `reviewer` | opus [1m] | – | yes (`read_only_os`) |
-| `ticketer` | opus [1m] | – | – |
-| `scribe` | sonnet | **yes** | – |
-| `designer` | opus [1m] | – | – |
+| Worker | Pinned model | Routed per dispatch | May push | Read-only |
+|---|---|---|---|---|
+| `explorer` | `claude-sonnet-5-5` | yes | – | in effect (`worktree_guard`) |
+| `coder` | `claude-opus-5-5` | yes, never below sonnet | – | – |
+| `reviewer` | `claude-opus-5-5` (1M window) | **never** | – | yes (`read_only_os`) |
+| `ticketer` | `claude-sonnet-5-5` | yes | – | – |
+| `scribe` | `claude-sonnet-5-5` | yes | **yes** | – |
+| `designer` | `claude-sonnet-5-5` | yes | – | – |
 
+- **radar picks the model per dispatch.** It reads the brief's Task paragraph:
+  well-scoped work goes to `claude-sonnet-5-5`, complex or unclear work to
+  `claude-opus-5-5`. The pin applies only when radar names no model. Menus and
+  signals: `radar-lanes` §4c.
+- **The `reviewer` is never routed.** Its gate re-run is the only verification
+  in the bundle, so it always runs its pin.
 - **Only `scribe` may push** — enforced by policy, not by asking nicely.
 - **The `reviewer` never sees the coder's report or reasoning** — only branch,
   diff and acceptance criteria. With a single vendor, context isolation is where
