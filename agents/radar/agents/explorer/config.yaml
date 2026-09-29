@@ -15,7 +15,7 @@ executor:
   #
   # ``context_window`` stays 200k, the largest window shared by every model in
   # this worker's menu. See the note in the coder's config.
-  model: claude-sonnet-5
+  model: claude-sonnet-5-5
   context_window: 200000
   config:
     harness: claude-sdk

@@ -11,7 +11,7 @@ executor:
   # ROUTABLE: the pin is the FALLBACK, overridden per dispatch by ``args.model``
   # (``radar-lanes`` §4c). No ``context_window`` here, so no window/model
   # pairing to keep — every model in this worker's menu is in reach.
-  model: claude-sonnet-5
+  model: claude-sonnet-5-5
   config:
     harness: claude-sdk
     permission_mode: auto
