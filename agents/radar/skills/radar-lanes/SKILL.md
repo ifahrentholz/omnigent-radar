@@ -393,24 +393,30 @@ Each worker may be sent **only** a model from its own row. Nothing else, ever �
 not a model you saw elsewhere in the session, not one a human mentioned, not one
 you remember from another project.
 
-| Worker | cheap | mid | strong | If you send nothing |
-|---|---|---|---|---|
-| `coder` | — | `claude-sonnet-5` | `claude-opus-5-5` | `claude-opus-5-5` |
-| `explorer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
-| `ticketer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
-| `designer` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
-| `scribe` | `claude-fable-5` | `claude-sonnet-5` | `claude-opus-5-5` | `claude-sonnet-5` |
-| **`reviewer`** | — **send no `args.model`, ever** — | | | `claude-opus-5-5` |
+| Worker | well-scoped | strong | If you send nothing |
+|---|---|---|---|
+| `coder` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-opus-5-5` |
+| `explorer` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
+| `ticketer` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
+| `designer` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
+| `scribe` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
+| **`reviewer`** | — **send no `args.model`, ever** — | | `claude-opus-5-5` |
 
-**`claude-sonnet-5` is the floor for the `coder`. There is no cheap column for
-it and there is not going to be one.** The coder is the only worker that writes
-product code, and code written a tier too cheap does not fail loudly — it comes
-back plausible, passes a shallow read, and costs a review cycle plus a re-run to
-undo. `claude-fable-5` is never a valid value for a `coder` dispatch. If you
-ever find yourself reasoning towards it, the answer is `claude-sonnet-5`.
+Two tiers, not three. `claude-sonnet-5-5` is fast and strongest on work whose
+edges are already drawn, which is exactly what SIMPLE and MODERATE describe; it
+is also the cheapest model on the menu. There is no tier below it, because every
+model that would sit there is either more expensive or weaker than the work
+tolerates.
+
+**`claude-sonnet-5-5` is the floor for the `coder`, and there is not going to
+be anything below it.** The coder is the only worker that writes product code,
+and code written a tier too cheap does not fail loudly — it comes back
+plausible, passes a shallow read, and costs a review cycle plus a re-run to
+undo. If you ever find yourself reasoning towards a model not on its row, the
+answer is `claude-sonnet-5-5`.
 
 Note what this table guarantees: for the `coder`, both things you are allowed to
-do — name `claude-sonnet-5`/`claude-opus-5-5`, or name nothing and let the pin
+do — name `claude-sonnet-5-5`/`claude-opus-5-5`, or name nothing and let the pin
 stand — land at sonnet or above. Nothing is enforcing that for you. **This is a
 rule you keep, not a gate that catches you**, which is exactly why it is written
 as an absolute rather than a preference.
@@ -434,9 +440,22 @@ the worker will actually work from, so it is the honest input.
 
 | | Signals | Pick |
 |---|---|---|
-| **SIMPLE** | One file, one obvious edit. A lookup with a known answer shape. A rename, a version bump, a config line. A commit message for a diff that is already written. | cheap column |
-| **MODERATE** | A handful of files along one seam. A bug with a named symptom. A question needing a few files read and correlated. Tickets from a spec that is already sharp. | mid |
+| **SIMPLE** | One file, one obvious edit. A lookup with a known answer shape. A rename, a version bump, a config line. A commit message for a diff that is already written. | well-scoped |
+| **MODERATE** | A handful of files along one seam. A bug with a named symptom. A question needing a few files read and correlated. Tickets from a spec that is already sharp. | well-scoped |
 | **COMPLEX** | Touches a contract other code depends on. Needs a decision, not just an edit. Concurrency, auth, migrations, error paths. A question whose shape you cannot predict. Anything where you are unsure. | strong |
+
+SIMPLE and MODERATE share a column, and the line that matters is the one below
+them: **can you state in the brief where the work ends?** If you can, it is
+well-scoped. If the worker has to find out where it ends, it is COMPLEX.
+
+**For the `explorer`**, the same line in its own terms:
+
+- **COMPLEX:** following data or control flow across several module
+  boundaries; a *why does it behave like this*, not a *where is it*; an
+  architecture question whose answer a later decision will rest on.
+- **Well-scoped, even when there are many of them:** onboarding fan-out. Each
+  explorer there gets one narrow question, and because they run in parallel,
+  this is where a tier too strong costs the most.
 
 **Unsure is COMPLEX, not MODERATE.** The costs are not symmetric: a task routed
 one tier too strong costs a few cents; one tier too cheap costs a failed step,
@@ -456,7 +475,7 @@ When the model differs from the worker's pin, put it in the result line — one
 clause, not a section:
 
 ```
-**✓ explore** → 3 Dateien · `claude-fable-5` (SIMPLE)
+**✓ implement** → 2 Dateien · `claude-sonnet-5-5` (MODERATE)
 ```
 
 The human has to be able to see what you decided without opening a log; that is

@@ -249,9 +249,9 @@ prompt: |
   classification signals and the reporting are in `radar-lanes` §4c. Three
   absolutes from it, because they are the ones that cost real money when broken:
 
-  - **`claude-sonnet-5` is the floor for the `coder`.** Never `claude-fable-5`,
-    under any classification, however small the change looks. Nothing enforces
-    this — it is yours to keep.
+  - **`claude-sonnet-5-5` is the floor for the `coder`.** Never a model off its
+    row, under any classification, however small the change looks. Nothing
+    enforces this — it is yours to keep.
   - **Never send the `reviewer` a model.** Its gate re-run is the only
     verification in this bundle.
   - **Unsure is COMPLEX.** A tier too strong costs cents; a tier too cheap costs

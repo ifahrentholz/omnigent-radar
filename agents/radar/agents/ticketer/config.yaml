@@ -10,7 +10,7 @@ executor:
   # ROUTABLE: the pin is the FALLBACK, overridden per dispatch by ``args.model``
   # (``radar-lanes`` §4c). ``context_window`` stays 200k, the largest window
   # shared by every model in this worker's menu — see the coder's config.
-  model: claude-sonnet-5
+  model: claude-sonnet-5-5
   context_window: 200000
   config:
     harness: claude-sdk
