@@ -60,11 +60,18 @@ pstack's playbooks drive the app through Claude Code's `run` (CLIs) and
 `verify` (UIs) built-ins. Neither works here: `verify` does not exist outside
 Claude Code's VS Code extension, and `run` relies on Claude Code tools the
 Omnigent harness does not expose. poteto uses the project's own verification
-skill instead:
+skill instead. In a poteto session, type:
 
 ```text
-poteto:create-verification-skill
+/create-verification-skill
 ```
+
+Slash commands carry the skill's bare name. The `poteto:` prefix only exists
+in the skill listing the model sees, so `/poteto:create-verification-skill` is
+an unknown command. Type `/` to see the 31 skills you can invoke this way; the
+`principle-*` leaves are hidden, as in pstack. A slash command always runs the
+bundle's skill, so `/tdd` and `/teach` reach pstack's even when
+`~/.claude/skills/` has skills of the same name.
 
 It writes `.claude/skills/verify-<app>/` into the project: how to launch the
 app, check it is healthy, drive it like a user, capture evidence and clean up,
