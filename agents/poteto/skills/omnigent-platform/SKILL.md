@@ -161,12 +161,20 @@ Omnigent keeps conversations in its own store and the harness writes no `~/.clau
 - **This bundle's scratch state** lives under `.omnigent/poteto/` in the project: todolists, run notes, candidate outputs, decision logs.
 - **Never write** `.omnigent/state.json`, `.omnigent/learnings.md`, `.omnigent/runs/` or `.omnigent/project/`. They belong to another agent bundle (radar) that runs in the same projects and resumes work from them.
 - **The Orchestrate store** stays at `~/.claude/orchestrate/<project-slug>/`, as the playbook says. It is outside the project, and nothing else reads it.
-- **The installed plugin root** that pstack refers to is the bundle base directory the Skill tool reports.
+- **The installed plugin root** that pstack refers to (as in "`skills/poteto-mode/scripts/...` under the installed plugin") is the directory that holds `skills/`. The Skill tool reports a skill's own base directory, `<root>/skills/<name>`; the plugin root is two levels up from it.
 
 ## Scripts
 
-`poteto-mode/scripts/` ships bash and Bun tools. The bash ones (`worktree-audit.sh`, `show-me-your-work/scripts/log.sh`) run as they are. `orch`, `watch-pr` and `check-plan` need `bun`.
+pstack names its tools by short names (`orch`, `watch-pr`) or calls them by path as if they were executable. Here every script runs through its interpreter: Omnigent drops the executable bits when it unpacks the bundle, so a direct call fails with `Permission denied` (exit 126). These are the exact invocations, with `<root>` the plugin root from **Paths**:
 
-Omnigent's host daemon keeps the `PATH` it started with, so a `bun` installed later is often missing from `sys_os_shell` even though the human's terminal has it. Before the first Bun tool of a session, run `command -v bun || ls ~/.bun/bin/bun`. If only the second finds it, prefix the command with `PATH="$HOME/.bun/bin:$PATH"`. `watch-pr` starts with `#!/usr/bin/env bun` and needs that prefix too. If neither finds `bun`, say so when a playbook calls for one of these tools and do the step by hand. Never skip it silently.
+| Tool | Invocation | Needs |
+|---|---|---|
+| `orch` | `bun <root>/skills/poteto-mode/scripts/orch/orch.ts <args>` | bun |
+| `watch-pr` | `bun <root>/skills/poteto-mode/scripts/watch-pr/watch-pr <args>` (the launcher file inside the `watch-pr/` directory) | bun |
+| `check-plan` | `node <root>/skills/poteto-mode/scripts/check-plan.mjs <plan.md>` | node |
+| `worktree-audit.sh` | `bash <root>/skills/poteto-mode/scripts/worktree-audit.sh [repo]` | bash |
+| `log.sh` | `bash <root>/skills/show-me-your-work/scripts/log.sh <args>` | bash |
 
-On first use the scripts install their one dependency into `poteto-mode/scripts/node_modules/`. `runner/pstack-runner` is not used here; the workers replace it. `runner/model-matrix.test.ts` fails in this bundle by design: it checks open-pstack's package layout, including the `setup-pstack` skill and agent files this bundle leaves out.
+Omnigent's host daemon keeps the `PATH` it started with, so a `bun` installed later is often missing from `sys_os_shell` even though the human's terminal has it. Before the first bun tool of a session, run `command -v bun || ls ~/.bun/bin/bun`. If only the second finds it, prefix every bun command with `PATH="$HOME/.bun/bin:$PATH"`. If neither finds `bun`, say so when a playbook calls for one of these tools and do the step by hand. Never skip it silently.
+
+On first use the scripts install their dependencies into `poteto-mode/scripts/node_modules/`. `runner/pstack-runner` is not used here; the workers replace it. `runner/model-matrix.test.ts` fails in this bundle by design: it checks open-pstack's package layout, including the `setup-pstack` skill and agent files this bundle leaves out.

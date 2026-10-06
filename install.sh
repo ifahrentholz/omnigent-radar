@@ -80,13 +80,13 @@ for cli in gh glab; do
 done
 
 # poteto only. Neither blocks the installation: without codex the Codex lanes
-# drop out, without bun the pstack scripts (orch, watch-pr, check-plan) do.
+# drop out, without bun the pstack scripts orch and watch-pr do.
 command -v codex >/dev/null 2>&1 \
   && say "· codex" "$(codex --version 2>/dev/null | head -1) — poteto's Codex lanes" \
   || say "· codex" "not installed — poteto's Codex lanes will drop out"
 command -v bun >/dev/null 2>&1 \
   && say "· bun" "$(bun --version 2>/dev/null) — poteto's pstack scripts" \
-  || say "· bun" "not installed — poteto's orch / watch-pr / check-plan scripts need it"
+  || say "· bun" "not installed — poteto's orch and watch-pr scripts need it"
 
 echo
 echo "Installation"

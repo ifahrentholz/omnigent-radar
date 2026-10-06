@@ -88,12 +88,12 @@ poteto never writes radar's files (`.omnigent/state.json`, `learnings.md`,
   `recall`, `reflect`, `show-me-your-work` and the Session pickup and Eval
   playbooks read transcripts through `omnigent session export` and
   `sys_session_get_history` instead.
-- **Bun scripts.** `orch`, `watch-pr` and `check-plan` need `bun`. Omnigent's
-  host daemon keeps the `PATH` it started with, so a `bun` installed afterwards
-  is invisible to poteto until the daemon restarts (`omnigent stop`, then start
-  again from a new terminal). poteto falls back to `~/.bun/bin/bun` on its own.
-  Without any `bun`, the Orchestrate, Babysit and multi-phase playbooks do
-  those steps by hand.
+- **Bun scripts.** `orch` and `watch-pr` need `bun`; `check-plan` runs on
+  node. Omnigent's host daemon keeps the `PATH` it started with, so a `bun`
+  installed afterwards is invisible to poteto until the daemon restarts
+  (`omnigent stop`, then start again from a new terminal). poteto falls back
+  to `~/.bun/bin/bun` on its own. Without any `bun`, the Orchestrate and
+  Babysit playbooks do those steps by hand.
 - **No nested lanes.** A lane cannot dispatch further. pstack's own lanes may
   not either, but its Orchestrate and Autopilot playbooks give phase owners
   their own fan-out, which poteto cannot yet do.
