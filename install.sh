@@ -34,9 +34,12 @@ if [ "$MODE" = uninstall ]; then
 fi
 
 ok=0; warn=0
-say()  { printf '  %-14s %s\n' "$1" "$2"; }
-good() { say "✓ $1" "$2"; ok=$((ok+1)); }
-bad()  { say "✗ $1" "$2"; warn=$((warn+1)); }
+# The mark gets its own argument: printf pads by bytes, and ✓ ✗ · differ in
+# byte length, so padding them together with the name misaligns the column.
+say()  { printf '  %s %-12s %s\n' "$1" "$2" "$3"; }
+good() { say "✓" "$1" "$2"; ok=$((ok+1)); }
+bad()  { say "✗" "$1" "$2"; warn=$((warn+1)); }
+info() { say "·" "$1" "$2"; }
 
 echo "Prerequisites"
 
@@ -72,18 +75,18 @@ for cli in gh glab; do
     if [ "${hosts:-0}" -gt 0 ]; then
       good "$cli" "signed in to $hosts host(s)"
     else
-      say "· $cli" "installed, not signed in anywhere — needed for tickets/deliver"
+      info "$cli" "installed, not signed in anywhere — needed for tickets/deliver"
     fi
   else
-    say "· $cli" "not installed — needed only for projects on that platform"
+    info "$cli" "not installed — needed only for projects on that platform"
   fi
 done
 
 # poteto only, and it does not block the installation: without bun the pstack
 # scripts orch and watch-pr drop out.
 command -v bun >/dev/null 2>&1 \
-  && say "· bun" "$(bun --version 2>/dev/null) — poteto's pstack scripts" \
-  || say "· bun" "not installed — poteto's orch and watch-pr scripts need it"
+  && good bun "$(bun --version 2>/dev/null) — poteto's pstack scripts" \
+  || info bun "not installed — poteto's orch and watch-pr scripts need it"
 
 echo
 echo "Installation"
