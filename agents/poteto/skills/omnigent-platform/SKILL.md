@@ -27,7 +27,7 @@ Every pstack skill is listed here as `poteto:<name>`. Always invoke the qualifie
 | Edit a file | `sys_os_edit` |
 | Run a shell command, search, glob | `sys_os_shell` (`rg`, `grep`, `find`, `ls`, `git`) |
 | Bash with `run_in_background`, a dev server, a watcher, a log tail | a terminal: `sys_terminal_launch` with the `shell` terminal, then `sys_terminal_send` / `sys_terminal_read`, and `sys_terminal_close` when done. `sys_os_shell` blocks until the command exits. |
-| Dispatch a subagent (`Agent` / `Task`) | `sys_session_send` to the `claude` or `codex` worker. See **Dispatch**. |
+| Dispatch a subagent (`Agent` / `Task`) | `sys_session_send` to the `claude` worker. See **Dispatch**. |
 | Dispatch N parallel subagents | N `sys_session_send` calls in the same turn |
 | Wait for a subagent | End the turn. You are woken when a worker finishes. Call `sys_read_inbox` once per wake. |
 | Inspect what a subagent did | `sys_session_get_history` on its `conversation_id` |
@@ -62,8 +62,9 @@ This replaces `references/provider-dispatch.md` for routing. Its rules on owners
 
 | Worker | Harness | Runs |
 |---|---|---|
-| `claude` | `claude-sdk` | Claude models. The pin is `claude-opus-5-5`; a dispatch names the model. |
-| `codex` | `codex-native` | Codex models. The pin is `gpt-5.6-sol`. |
+| `claude` | `claude-sdk` | Opus or Sonnet. The pin is `claude-opus-5-5`; a dispatch names the model. |
+
+There is one worker, on purpose. Codex and Fable lanes cost too many tokens for this setup and are not routed (see **Model sheet**).
 
 Workers cannot dispatch further. That matches pstack's lane agents, which may not spawn agents or start a pstack workflow.
 
@@ -74,13 +75,13 @@ A descriptor is `<provider>:<model>@<effort>`. Route it like this:
 | Descriptor | `agent` | `args.model` | `args.reasoning_effort` |
 |---|---|---|---|
 | `claude:opus@<e>` | `claude` | `claude-opus-5-5` | `<e>` |
-| `claude:fable@<e>` | `claude` | `claude-fable-5-1` | `<e>` |
-| `codex:gpt-5.6-sol@<e>` | `codex` | `gpt-5.6-sol` | `<e>` |
-| `codex:gpt-6.1-sol@<e>` (a pstack default) | `codex` | `gpt-5.6-sol` | `<e>` |
+| `claude:sonnet@<e>` | `claude` | `claude-sonnet-5-5` | `<e>` |
 | `inherit-parent`, `auto` | `claude` | this session's model | omit |
-| `grok:*` | not available. A named dropout. | | |
+| `claude:fable@*`, `codex:*`, `grok:*` | not routed | | |
 
-`claude` accepts `low medium high xhigh max`; `codex` also accepts `ultra`. `args.model` and `args.reasoning_effort` only apply when the send creates the session.
+The model sheet below names none of the unrouted descriptors. pstack's skills still name them as fallback defaults ("if the sheet or that line is missing, use …"); the sheet is never missing here, so read the role's line from it instead and never dispatch a Fable, Codex or Grok lane.
+
+`claude` accepts `low medium high xhigh max`. `args.model` and `args.reasoning_effort` only apply when the send creates the session.
 
 Every `sys_session_send` also sets:
 
@@ -123,26 +124,27 @@ This replaces `~/.claude/pstack-models.md`. `setup-pstack` is not part of this b
 # pstack model configuration
 
 feature, refactoring: claude:opus@xhigh
-bug-fix: codex:gpt-5.6-sol@max
-perf-issue: codex:gpt-5.6-sol@max
-hillclimb: codex:gpt-5.6-sol@max
+bug-fix: claude:opus@xhigh
+perf-issue: claude:opus@xhigh
+hillclimb: claude:opus@xhigh
 judgment and prose: claude:opus@max
 hardest tasks: claude:opus@max
 how explorer: claude:opus@high
 how explainer: claude:opus@max
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude:opus@max, codex:gpt-5.6-sol@max, claude:fable@max
-arena cross-judge pool: claude:opus@max, codex:gpt-5.6-sol@max, claude:fable@max
+arena runners: claude:opus@max, claude:sonnet@high
+arena cross-judge pool: claude:opus@max, claude:sonnet@high
 swarm workers: claude:opus@high
-architect runners: claude:opus@max, codex:gpt-5.6-sol@max, claude:fable@max
-interrogate reviewers: claude:opus@max, codex:gpt-5.6-sol@max, claude:fable@max
+architect runners: claude:opus@max, claude:sonnet@high
+interrogate reviewers: claude:opus@max, claude:sonnet@high
 ```
 
-Two departures from pstack's first-run sheet:
+How this differs from pstack's first-run sheet, which spreads the roles over Opus, Codex's Sol and Grok:
 
-- **Sol is `gpt-5.6-sol`, not `gpt-6.1-sol`.** Codex rejects `gpt-6.1-sol` for a ChatGPT-account login (probed 2026-10-05); `gpt-5.6-sol` is on the account and is the previous Sol default that `provider-dispatch.md` still accepts unchanged. Where a pstack skill names `gpt-6.1-sol`, read `gpt-5.6-sol`.
-- **Grok is not used here.** Its first-run roles moved to Opus (feature and refactoring, how explorer, swarm workers), and Fable took its seat in the three-lane panels. Where a pstack skill names a Grok default, read the role's line above instead.
+- **Claude only, to keep token use down.** Every single-lane role runs on Opus. The Sol roles (bug-fix, perf-issue, hillclimb) and the Grok roles (feature and refactoring, how explorer, swarm workers) moved to Opus.
+- **Two-lane panels: Opus and Sonnet 5.5.** pstack's panels have three lanes on three model families. Here they have two, which is the minimum `architect` accepts ("at least two structurally distinct candidates"). Sonnet keeps a second model in the panel, so `interrogate` still gets the model diversity its signal comes from, at a fraction of Opus's cost.
+- **No Fable.** It is the most expensive model on the menu. pstack offers it but assigns it no first-run role either.
 
 ## Todolist
 

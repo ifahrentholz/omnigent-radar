@@ -32,9 +32,9 @@ Nothing inside a vendored skill. The adaptation lives in three places:
   provider dispatch and model sheet that pstack assumes onto Omnigent.
 - `config.yaml` is the orchestrator. Its prompt does the job of open-pstack's
   `SessionStart` hook, which routes non-trivial work into `poteto-mode`.
-- `agents/claude/` and `agents/codex/` are the model lanes. They take the place
-  of open-pstack's `pstack-<family>-<effort>` agent definitions and of the
-  external `pstack-runner`.
+- `agents/claude/` is the one model lane, for Opus and Sonnet. It takes the
+  place of open-pstack's `pstack-<family>-<effort>` agent definitions and of
+  the external `pstack-runner`.
 
 ## Left out
 
@@ -43,8 +43,7 @@ Nothing inside a vendored skill. The adaptation lives in three places:
 | `skills/setup-pstack` | It writes `~/.claude/pstack-models.md` and an `@` import into `~/.claude/CLAUDE.md`. Every Claude session on the machine reads that file, radar's included. The model sheet lives in `skills/omnigent-platform/` instead. |
 | `hooks/` | The `SessionStart` hook only injects the poteto-mode routing mandate. The orchestrator prompt carries it. |
 | `agents/*.md` | Claude Code subagent definitions. Omnigent dispatches to the workers under `agents/` instead. |
-| The Grok lanes | Not used here. Their roles are reassigned in the model sheet. |
-| `gpt-6.1-sol` | Codex rejects it for a ChatGPT-account login. The Sol lanes run `gpt-5.6-sol`, the previous Sol default. |
+| Codex, Grok and Fable lanes | Too many tokens for this setup. Their roles run on Opus, and the panels on Opus plus Sonnet 5.5; see the model sheet in `skills/omnigent-platform/`. |
 
 ## License
 

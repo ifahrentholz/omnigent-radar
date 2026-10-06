@@ -320,7 +320,7 @@ agents/poteto/
   UPSTREAM.md               # pinned open-pstack commit, what is left out
   skills/                   # open-pstack's skills, unchanged …
     omnigent-platform/      #   … plus the map onto Omnigent
-  agents/claude/  agents/codex/   # the model lanes
+  agents/claude/            # the model lane (Opus or Sonnet per dispatch)
 ```
 
 ## Licence

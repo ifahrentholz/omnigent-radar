@@ -1,10 +1,11 @@
 spec_version: 1
 name: claude
 description: >-
-  Claude lane for poteto. Runs one scoped task the lead assigns (an
-  implementation, a design candidate, a review, an exploration) on the Claude
-  model and effort named in the dispatch. Takes the place of open-pstack's
-  ``pstack-opus-<effort>`` and ``pstack-fable-<effort>`` agents.
+  Claude lane for poteto, and its only one. Runs one scoped task the lead
+  assigns (an implementation, a design candidate, a review, an exploration) on
+  the model (Opus or Sonnet) and effort named in the dispatch. Takes the place
+  of open-pstack's ``pstack-<family>-<effort>`` agents and its external
+  ``pstack-runner``.
 
 executor:
   type: omnigent

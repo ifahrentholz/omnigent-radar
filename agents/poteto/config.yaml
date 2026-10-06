@@ -14,8 +14,7 @@ timers: true
 description: >-
   poteto — Lauren Tan's pstack (via open-pstack) on Omnigent. The lead engineer
   reads the task, picks a pstack playbook, learns the system before changing
-  it, compares designs, delegates code to Claude and Codex lanes in their own
-  worktrees, verifies real behaviour on the real surface, and carries the work
+  it, compares designs, delegates code to Claude lanes in their own worktrees, verifies real behaviour on the real surface, and carries the work
   to a pull request. Its skills are open-pstack's, unchanged; the
   ``omnigent-platform`` skill maps their Claude Code specifics onto Omnigent.
 
@@ -51,7 +50,6 @@ terminals:
 tools:
   agents:
   - claude
-  - codex
 
 # ``all``: the bundle's skills plus the host's, so a project's own
 # ``.claude/skills/verify-<app>/`` is visible. That project skill is what the

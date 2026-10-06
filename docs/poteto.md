@@ -23,8 +23,7 @@ state.
 | **Orchestrator** | `poteto` on `claude-opus-5-5`. Its prompt routes non-trivial work into `poteto:poteto-mode`, which is what open-pstack's `SessionStart` hook does in Claude Code. |
 | **Skills** | open-pstack's skill tree, vendored unchanged under `agents/poteto/skills/` and listed as `poteto:<name>`. |
 | **Platform map** | `poteto:omnigent-platform`, the one skill poteto adds. It says what pstack's Claude Code tools, built-in skills, provider routes, model sheet and paths mean on Omnigent. |
-| **`claude` lane** | `claude-sdk`. Opus or Fable, model and effort chosen per dispatch. Replaces the `pstack-opus-*` / `pstack-fable-*` agents. |
-| **`codex` lane** | `codex-native`. `gpt-5.6-sol`, effort per dispatch. Replaces `pstack-runner` for Codex. |
+| **`claude` lane** | `claude-sdk`. Opus or Sonnet 5.5, model and effort chosen per dispatch. Replaces the `pstack-<family>-<effort>` agents and `pstack-runner`. |
 
 Every writing lane gets its own git worktree, which the lead creates with
 `git worktree add` under `<repo>-worktrees/poteto-<title>` on a
@@ -41,16 +40,18 @@ machine, radar's included, so the skill is left out and the sheet is static in
 
 | Role | Lane |
 |---|---|
-| feature, refactoring | `claude:opus@xhigh` |
-| bug-fix, perf-issue, hillclimb | `codex:gpt-5.6-sol@max` |
+| feature, refactoring, bug-fix, perf-issue, hillclimb | `claude:opus@xhigh` |
 | judgment and prose, hardest tasks, how explainer | `claude:opus@max` |
 | how explorer, swarm workers | `claude:opus@high` |
 | why, reflect | `inherit-parent` |
-| arena, architect, interrogate panels | `claude:opus@max`, `codex:gpt-5.6-sol@max`, `claude:fable@max` |
+| arena, architect, interrogate panels | `claude:opus@max`, `claude:sonnet@high` |
 
-Two departures from pstack's defaults. Grok is not used: its roles went to
-Opus, and Fable took its seat in the panels. And Sol is `gpt-5.6-sol`, because
-Codex rejects pstack's `gpt-6.1-sol` for a ChatGPT-account login.
+pstack spreads these roles over Opus, Codex's Sol and Grok, with three-lane
+panels. poteto runs Claude only, to keep token use down: every single-lane role
+is on Opus, and the panels have two lanes, Opus and Sonnet 5.5. Two is the
+minimum `architect` accepts, and the second model keeps the diversity
+`interrogate` relies on, at a fraction of Opus's cost. Codex, Grok and Fable
+lanes are never dispatched.
 
 Change a role by editing its line. Nothing else reads the sheet.
 
