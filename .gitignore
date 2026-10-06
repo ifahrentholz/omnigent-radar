@@ -1,0 +1,2 @@
+# poteto: the pstack scripts install their dependency next to themselves on first use.
+agents/poteto/skills/poteto-mode/scripts/node_modules/

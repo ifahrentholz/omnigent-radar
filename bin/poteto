@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# poteto — start pstack's lead engineer in the current directory.
+#
+#   cd <project> && poteto       interactive session (you speak first)
+#   poteto -p "question"         HEADLESS: one request, then exit
+#
+# All arguments are passed through to `omnigent run`. `--log` is added
+# automatically UNLESS a prompt is present: with -p, Omnigent runs headless and
+# rejects --log ("only supported in interactive REPL mode").
+set -euo pipefail
+
+# Resolve the bundle path through a symlink too — installation puts a symlink in
+# ~/.local/bin, and macOS has no `readlink -f`.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+BUNDLE="$(cd -P "$(dirname "$src")/.." && pwd)/agents/poteto"
+
+if [ ! -f "$BUNDLE/config.yaml" ]; then
+  echo "poteto: no bundle at $BUNDLE — repository incomplete or moved?" >&2
+  exit 1
+fi
+if ! command -v omnigent >/dev/null 2>&1; then
+  echo "poteto: 'omnigent' is not on your PATH. See https://omnigent.ai/" >&2
+  exit 1
+fi
+
+# No cd: poteto runs in the current directory. Without a repository it starts
+# regardless, but every writing lane needs a worktree and will fail to dispatch.
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "poteto: $PWD is not a git repository — lanes that write code cannot get a worktree." >&2
+fi
+
+for arg in "$@"; do
+  case "$arg" in
+    -p|--prompt|-p*|--prompt=*) exec omnigent run "$BUNDLE" "$@" ;;
+  esac
+done
+exec omnigent run "$BUNDLE" --log "$@"

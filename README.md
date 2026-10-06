@@ -284,11 +284,27 @@ with someone else's compression.
 Only the second is real self-improvement. Filing a method problem as a project
 rule fixes it in one repo and lets it recur in every other one.
 
+## poteto, the second agent
+
+This repository also ships `poteto`: Lauren Tan's pstack, through open-pstack,
+as its own Omnigent agent. It is independent of radar. It has its own launcher,
+its own skills, its own workers and its own state under `.omnigent/poteto/`,
+and it never touches radar's files. `./install.sh` links both commands.
+
+```bash
+cd your-project
+poteto
+```
+
+What it runs, the model sheet, how it verifies, and its known gaps:
+[`docs/poteto.md`](docs/poteto.md).
+
 ## Layout
 
 ```
-install.sh                  # prerequisite check + symlink
-bin/radar                   # launcher; resolves the bundle through the symlink
+install.sh                  # prerequisite check + symlinks
+bin/radar  bin/poteto       # launchers; resolve their bundle through the symlink
+scripts/sync-pstack.sh      # vendors open-pstack's skills into agents/poteto/
 agents/radar/
   config.yaml               # the orchestrator
   skills/
@@ -299,9 +315,19 @@ agents/radar/
   agents/<worker>/
     config.yaml
     skills/                 # bundled with the worker that runs them
+agents/poteto/
+  config.yaml               # pstack's lead engineer
+  UPSTREAM.md               # pinned open-pstack commit, what is left out
+  skills/                   # open-pstack's skills, unchanged …
+    omnigent-platform/      #   … plus the map onto Omnigent
+  agents/claude/            # the model lane (Opus or Sonnet per dispatch)
 ```
 
 ## Licence
 
 MIT, except `agents/radar/agents/designer/skills/radar-frontend-design/`, which is
 Apache-2.0 and carries its own `LICENSE.txt`.
+
+`agents/poteto/skills/` is open-pstack's work (MIT), built on Lauren Tan's
+pstack and including attributed MIT-licensed work from Cursor Team Kit and
+Superpowers. Its license and attribution files are in `agents/poteto/licenses/`.

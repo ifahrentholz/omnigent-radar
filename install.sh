@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# radar installer — links bin/radar into a directory on your PATH.
+# installer — links bin/radar and bin/poteto into a directory on your PATH.
 #
 #   ./install.sh                 install (default target: ~/.local/bin)
 #   ./install.sh --dir ~/bin     install elsewhere
-#   ./install.sh --uninstall     remove the link
+#   ./install.sh --uninstall     remove the links
 #
 # It deliberately does NOT edit your shell config. A symlink in a PATH
 # directory works in every shell, is one line to undo, and cannot break a
@@ -22,11 +22,14 @@ while [ $# -gt 0 ]; do
 done
 
 ROOT="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LINK="$TARGET_DIR/radar"
+COMMANDS=(radar poteto)
 
 if [ "$MODE" = uninstall ]; then
-  if [ -L "$LINK" ]; then rm "$LINK"; echo "removed: $LINK"
-  else echo "nothing to remove: $LINK is not a symlink"; fi
+  for cmd in "${COMMANDS[@]}"; do
+    LINK="$TARGET_DIR/$cmd"
+    if [ -L "$LINK" ]; then rm "$LINK"; echo "removed: $LINK"
+    else echo "nothing to remove: $LINK is not a symlink"; fi
+  done
   exit 0
 fi
 
@@ -76,15 +79,24 @@ for cli in gh glab; do
   fi
 done
 
+# poteto only, and it does not block the installation: without bun the pstack
+# scripts orch and watch-pr drop out.
+command -v bun >/dev/null 2>&1 \
+  && say "· bun" "$(bun --version 2>/dev/null) — poteto's pstack scripts" \
+  || say "· bun" "not installed — poteto's orch and watch-pr scripts need it"
+
 echo
 echo "Installation"
 mkdir -p "$TARGET_DIR"
-if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
-  echo "  ✗ $LINK exists and is not a symlink — please check it yourself." >&2
-  exit 1
-fi
-ln -sfn "$ROOT/bin/radar" "$LINK"
-good radar "$LINK → $ROOT/bin/radar"
+for cmd in "${COMMANDS[@]}"; do
+  LINK="$TARGET_DIR/$cmd"
+  if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+    echo "  ✗ $LINK exists and is not a symlink — please check it yourself." >&2
+    exit 1
+  fi
+  ln -sfn "$ROOT/bin/$cmd" "$LINK"
+  good "$cmd" "$LINK → $ROOT/bin/$cmd"
+done
 
 case ":${PATH}:" in
   *":${TARGET_DIR}:"*) good PATH "$TARGET_DIR is on your PATH" ;;
@@ -94,7 +106,7 @@ esac
 
 echo
 if [ "$warn" -eq 0 ]; then
-  echo "Done. In any project directory:  radar"
+  echo "Done. In any project directory:  radar  or  poteto"
 else
-  echo "Installed, but $warn item(s) outstanding — radar will not start until they are fixed."
+  echo "Installed, but $warn item(s) outstanding — radar and poteto will not start until they are fixed."
 fi
