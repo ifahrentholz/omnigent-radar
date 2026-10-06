@@ -123,27 +123,27 @@ This replaces `~/.claude/pstack-models.md`. `setup-pstack` is not part of this b
 ```markdown
 # pstack model configuration
 
-feature, refactoring: claude:opus@xhigh
-bug-fix: claude:opus@xhigh
-perf-issue: claude:opus@xhigh
-hillclimb: claude:opus@xhigh
-judgment and prose: claude:opus@max
-hardest tasks: claude:opus@max
+feature, refactoring: claude:opus@high
+bug-fix: claude:opus@high
+perf-issue: claude:opus@high
+hillclimb: claude:opus@high
+judgment and prose: claude:opus@high
+hardest tasks: claude:opus@high
 how explorer: claude:opus@high
-how explainer: claude:opus@max
+how explainer: claude:opus@high
 why investigators, synthesizer: inherit-parent
 reflect tooling, judgment, divergent, synthesizer: inherit-parent
-arena runners: claude:opus@max, claude:sonnet@high
-arena cross-judge pool: claude:opus@max, claude:sonnet@high
+arena runners: claude:opus@high, claude:sonnet@high
+arena cross-judge pool: claude:opus@high, claude:sonnet@high
 swarm workers: claude:opus@high
-architect runners: claude:opus@max, claude:sonnet@high
-interrogate reviewers: claude:opus@max, claude:sonnet@high
+architect runners: claude:opus@high, claude:sonnet@high
+interrogate reviewers: claude:opus@high, claude:sonnet@high
 ```
 
 How this differs from pstack's first-run sheet, which spreads the roles over Opus, Codex's Sol and Grok:
 
-- **Claude only, to keep token use down.** Every single-lane role runs on Opus. The Sol roles (bug-fix, perf-issue, hillclimb) and the Grok roles (feature and refactoring, how explorer, swarm workers) moved to Opus.
-- **Two-lane panels: Opus and Sonnet 5.5.** pstack's panels have three lanes on three model families. Here they have two, which is the minimum `architect` accepts ("at least two structurally distinct candidates"). Sonnet keeps a second model in the panel, so `interrogate` still gets the model diversity its signal comes from, at a fraction of Opus's cost.
+- **Claude only, to keep token use down.** Every single-lane role runs on Opus, and Opus always runs at `high`, never `xhigh` or `max`. The Sol roles (bug-fix, perf-issue, hillclimb) and the Grok roles (feature and refactoring, how explorer, swarm workers) moved to Opus.
+- **Two-lane panels: Opus and Sonnet 5.5, both at `high`.** pstack's panels have three lanes on three model families. Here they have two, which is the minimum `architect` accepts ("at least two structurally distinct candidates"). Sonnet keeps a second model in the panel, so `interrogate` still gets the model diversity its signal comes from, at a fraction of Opus's cost.
 - **No Fable.** It is the most expensive model on the menu. pstack offers it but assigns it no first-run role either.
 
 ## Todolist
