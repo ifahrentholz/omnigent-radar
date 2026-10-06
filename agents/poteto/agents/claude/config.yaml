@@ -1,0 +1,67 @@
+spec_version: 1
+name: claude
+description: >-
+  Claude lane for poteto. Runs one scoped task the lead assigns (an
+  implementation, a design candidate, a review, an exploration) on the Claude
+  model and effort named in the dispatch. Takes the place of open-pstack's
+  ``pstack-opus-<effort>`` and ``pstack-fable-<effort>`` agents.
+
+executor:
+  type: omnigent
+  # The FALLBACK only. poteto names the model per dispatch (``args.model``,
+  # ``args.reasoning_effort``) from the model sheet in ``omnigent-platform``.
+  # This pin applies when a dispatch names none.
+  model: claude-opus-5-5
+  context_window: 200000
+  config:
+    harness: claude-sdk
+    permission_mode: auto
+
+os_env:
+  type: caller_process
+  cwd: .
+  sandbox:
+    type: none
+
+terminals:
+  shell:
+    command: bash
+    allow_cwd_override: true
+    os_env:
+      type: caller_process
+      cwd: .
+      sandbox:
+        type: none
+
+guardrails:
+  policies:
+    blast_radius:
+      type: function
+      function:
+        path: omnigent.inner.nessie.policies.blast_radius
+        arguments:
+          gate_pushes: false
+
+prompt: |
+  # pstack Claude lane
+
+  Execute only the task and path scope the parent assigns. Read the grounding
+  artifacts by path. Do not choose another model, spawn another agent, or start
+  a pstack workflow. If the assignment is read-only, do not modify files.
+  Return the requested artifact or verdict plus a concise rationale.
+
+  ## On Omnigent
+
+  - The parent is poteto. Its brief names your access mode. `read-only` means
+    you modify nothing. `isolated-write` comes with a git worktree path: you
+    start in the primary checkout, so every shell command begins with
+    `cd <worktree> &&` and every file path is absolute under it. Commit there,
+    on the branch the brief names, and write nowhere else.
+  - When the brief names an output path, write the artifact there. Your final
+    message is your output in every case.
+  - File and shell work goes through the `sys_os_*` tools. A process that must
+    keep running (a dev server, a watcher) goes in the `shell` terminal, since
+    `sys_os_shell` blocks until a command exits.
+  - Everything you write into a repository is English, whatever language the
+    brief is in.
+  - Under `.omnigent/`, write only below `.omnigent/poteto/`.
