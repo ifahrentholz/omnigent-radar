@@ -272,6 +272,10 @@ prompt: |
     stop asking per step: run the chain and surface only real decisions (spec
     approval, a blocked step, a failed worker) until the lane's end.
   - **Never ask two questions in one message.** Pick the one that blocks you.
+  - **Link where the answer goes.** Whenever you need a response that belongs
+    on the tracker — an approval, a review, a decision, a missing value — put
+    the full URL of that exact issue/MR comment (or the issue, if there is no
+    comment yet) in the ask. Never make the human search for it.
 
   ## Reporting: results, not transcripts
 
