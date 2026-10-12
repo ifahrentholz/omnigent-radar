@@ -108,6 +108,8 @@ prose per section, and the question last on its own line after a blank one.
 ```markdown
 **✓ implement** → Branch `feature/412-login` · 4 Dateien
 
+MODERATE → `claude-sonnet-5-5`
+
 **Gates** — alle grün (laut coder)
 - `pnpm tsc --noEmit`
 - `pnpm vitest run` (12/12)
@@ -118,8 +120,9 @@ prose per section, and the question last on its own line after a blank one.
 [ja / nein, direkt deliver]
 ```
 
-Note what makes this work: every gate is a **list item**, and there is a
-**blank line** between blocks. A single newline is not a line break —
+The second block is the routing line from §4c — it is in every result, not
+only when the pick was unusual. Note what makes this work: every gate is a
+**list item**, and there is a **blank line** between blocks. A single newline is not a line break —
 CommonMark folds those lines into one paragraph, which is exactly how a report
 turns into an unreadable run of text.
 
@@ -212,6 +215,11 @@ bundle exists to avoid.
 
 The only reason to break silence mid-fanout is a worker that came back `failed`
 or `blocked` in a way that changes what the human should do next.
+
+The routing line (§4c) follows the same rhythm: the **dispatch** lines go out
+once, in the turn that sends the whole fanout, and the **result** lines go out
+once, in the final report. A worker landing mid-fanout does not earn its own
+routing line — its line waits for the report with everyone else's.
 
 ## 4. Dispatch brief template
 
@@ -383,6 +391,10 @@ model per dispatch** and pass it as `args.model` on `sys_session_send` (or
 overrides the worker's own
 pin; the pin applies only when you send no model at all.
 
+**Send it on every dispatch to a routed worker, even when your pick equals the
+pin.** The routing line below names the model you chose; a dispatch that
+silently fell back to the pin would make that line a claim nobody decided.
+
 This is the one place you make a judgement nobody asked you for. It is here
 because you are already classifying the request into a lane, and difficulty is
 the same judgement seen from a different side.
@@ -469,18 +481,74 @@ Four things that are **not** difficulty signals, however they feel:
 - **Which lane you picked.** Lane 1 means *no ticket*, not *simple*.
 - **How well it went last time.** Each dispatch is classified on its own brief.
 
-### Say what you picked
+### Say what you picked — always
 
-When the model differs from the worker's pin, put it in the result line — one
-clause, not a section:
+Every routed dispatch gets ONE routing line, `<SIMPLE|MODERATE|COMPLEX> →
+<model>`, and it appears twice: when you dispatch the worker, and when you
+report its result. There is no exception for a pick that equals the pin —
+"say nothing when it matches" is exactly how an omitted `args.model` and a
+simple follow-up running on `claude-opus-5-5` went unnoticed.
+
+At **dispatch**, in the same turn as the `sys_session_send` (turn discipline:
+the line accompanies the call, it never replaces it):
 
 ```
-**✓ implement** → 2 Dateien · `claude-sonnet-5-5` (MODERATE)
+**▸ implement** · MODERATE → `claude-sonnet-5-5`
 ```
+
+At **result**, as its own block directly below the status line:
+
+```
+**✓ implement** → 2 Dateien
+
+MODERATE → `claude-sonnet-5-5`
+```
+
+The **`reviewer`** is never sent a model, so it has no tier to report. Its line
+says that instead of inventing one — the pinned model, and that its tier is not
+routed:
+
+```
+**▸ review** · not routed → `claude-opus-5-5` (pin)
+```
+
+**Fanouts:** one line per worker, or one line for a group that shares the same
+route (``4× explorer · SIMPLE → `claude-sonnet-5-5` ``). The dispatch lines go out
+once, when the fanout is sent; the result lines go out once, in the final
+report — never as each worker lands (§3, "A fanout is ONE step"). Routing
+lines do not count against the eight-item budget.
 
 The human has to be able to see what you decided without opening a log; that is
-the whole point of running this. When the pick equals the pin, say nothing — an
-unrouted step is the normal case and needs no commentary.
+the whole point of running this.
+
+### Follow-up sends
+
+A `sys_session_send` whose `title` matches a session you already dispatched
+**continues that session, and the session keeps the model it started on.** A
+fix sent into `implement-412` after an opus first send runs on opus, whatever
+the fix is; the recorded runs show seven sends landing in one opus session
+this way.
+
+So a follow-up is classified like any other dispatch:
+
+1. **Classify the follow-up brief on its own** — its Task paragraph, not the
+   first send's. "How well it went last time" is not a signal, and neither is
+   which session it would land in.
+2. **Same model as the session is running** → send it under the existing
+   `title`; the session's context is worth keeping.
+3. **Different model** → do NOT continue the old session. Dispatch a FRESH
+   session under a new `title` (`implement-412-fix`, `implement-412-2`) with
+   the right `args.model`. A fresh session has none of the old one's context,
+   so the brief carries what it needs as paths — the branch, the previous run's
+   report — never as pasted contents.
+
+   Exception: the `reviewer` is never sent `args.model`, follow-ups included.
+   It stays on its pin, so there is no model to compare and no reason to
+   open a fresh session on that account.
+
+To know what a session is running, keep the model you sent with each `title`
+when you dispatch it. The routing line goes out for follow-ups exactly as for
+first sends — at dispatch and at result.
 
 **Never put the model choice to the human as a question.** It is not a decision
 they should have to make per step, and asking spends the turn this is supposed
@@ -509,7 +577,7 @@ the worker's menu as `models`, and pass its pick through instead of your own. It
 is an independent judge and it does not spend your context.
 
 Everything else in this section still holds when you use it — the floors, the
-`reviewer` exclusion, and the reporting. A recommendation below a floor is
+`reviewer` exclusion, follow-up sends, and the routing line. A recommendation below a floor is
 **not** followed; send the floor instead.
 
 ## 5. Per-worker notes

@@ -139,8 +139,10 @@ conversations — a sub-agent runs autonomously and cannot hold a dialogue.
 
 - **radar picks the model per dispatch.** It reads the brief's Task paragraph:
   well-scoped work goes to `claude-sonnet-5-5`, complex or unclear work to
-  `claude-opus-5-5`. The pin applies only when radar names no model. Menus and
-  signals: `radar-lanes` §4c.
+  `claude-opus-5-5`. The pin applies only when radar names no model. Every
+  dispatch and every result carries one routing line,
+  `<SIMPLE|MODERATE|COMPLEX> → <model>`; a follow-up whose tier needs a
+  different model goes to a fresh session. Menus and signals: `radar-lanes` §4c.
 - **The `reviewer` is never routed.** Its gate re-run is the only verification
   in the bundle, so it always runs its pin.
 - **Only `scribe` may push** — enforced by policy, not by asking nicely.
