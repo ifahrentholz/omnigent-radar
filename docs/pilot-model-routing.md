@@ -94,17 +94,24 @@ remove it from the routable list in §4c. Both, or neither.
 
 ## How to tell it is working
 
-radar names the model in the result line whenever it differs from the pin:
+radar states the route in one line, `<SIMPLE|MODERATE|COMPLEX> → <model>`,
+every time — when it dispatches a worker and again when it reports the result,
+whether or not the pick equals the pin:
 
 ```
-**✓ explore** → 3 Dateien · `claude-fable-5` (SIMPLE)
+**▸ explore** · SIMPLE → `claude-sonnet-5-5`
 ```
 
-Silence means the pick equalled the pin — the normal case, and not a fault.
-What *is* a fault, and worth watching for on the first runs:
+The `reviewer` gets `not routed → claude-opus-5-5 (pin)` instead of a tier. A
+dispatch or result with no routing line is itself a fault. So is a follow-up
+send that continued a session on a different model than its own brief
+classifies to — radar should have opened a fresh session for it. Other faults
+worth watching for on the first runs:
 
 - a `coder` dispatch reporting `claude-fable-5` — the floor was broken;
-- a `review` step reporting any model at all — the exclusion was broken;
+- a `review` step whose line shows a tier, or any model other than the
+  `claude-opus-5-5` pin — the exclusion was broken (`not routed → claude-opus-5-5 (pin)`
+  is the correct line, not a fault);
 - every step reporting `claude-opus-5` — radar is classifying everything
   COMPLEX, which is safe but pointless.
 
