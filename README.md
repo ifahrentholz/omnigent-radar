@@ -81,7 +81,7 @@ flowchart LR
 | Lane | You say | Chain | State? |
 |---|---|---|---|
 | **0 · chat** | *"how does the auth flow work?"* | answer, or one `explore` | no |
-| **1 · quick** | *"bump the lockfile"* | `implement` → `deliver?` | no |
+| **1 · quick** | *"bump the lockfile"* | `implement` → `deliver?` (or `verify`) | no |
 | **2 · ticket** | *"implement #412"* | `implement` → `review` → `verify?` → `deliver` | no |
 | **3 · feature** | *"I want to build X"* | `grill` → `spec` → `tickets` → lane 2 per ticket | yes |
 
@@ -90,8 +90,8 @@ flowchart LR
 - **Not lanes, available any time:** `onboard` (derive repo conventions once),
   `learn` (record a lesson), `verify-setup` and `verify-maintain` (write and
   upkeep the project's verification skill).
-- **`verify?`** is proposed only when the project has a verification skill and
-  the change touches something a user can see or run. See
+- **`verify?`** is offered whenever the change touches something a user can
+  see or run — as the default in lane 2, as the second option in lane 1. See
   [Verification on the real surface](#verification-on-the-real-surface).
 
 ### After every step
@@ -228,6 +228,24 @@ verification skills:
 | `verify-setup` | Reads the repo to find the surface, the launch command, a way to drive it and what counts as evidence. Writes `verify-<app>` with Launch, Doctor, Drive, Evidence and Cleanup sections, plus a feature map (one file per user-facing feature). Proves it once end to end before handing it over. |
 | `verify` | Picks the mapped features the diff and the acceptance criteria touch, launches against disposable state, health-checks, drives, keeps the evidence, cleans up. `pass` means every selected feature was driven and behaved; `partial` says which were not reachable. |
 | `verify-maintain` | A fanout of `explorer`s reads each feature from source; the `verifier` then drives every feature live and fixes the skill where it drifted. Product regressions come back as findings, never as edits to the map. |
+
+### When each step runs
+
+You do not have to remember any of this; radar proposes each step at its
+point, and every proposal is still a question with a default.
+
+| Moment | radar proposes |
+|---|---|
+| A user-facing change passed `review` (lane 2, and every ticket of lane 3) | `verify` as the default next step |
+| …and the project has no verification skill yet | `verify-setup` then `verify`, as one yes. Declined once, it is not offered again that session |
+| A user-facing quick change (lane 1) | `deliver` first, `verify` (or setup then verify) as the second option |
+| `verify` is blocked because the skill no longer matches the app | `verify-maintain` **before** `deliver`, on the same branch, then `verify` again |
+| `verify` passed but reported drift (`drift:` in its result) | `verify-maintain` **after** `deliver`, as its own PR |
+| A lane-3 feature's last ticket is delivered and its tickets reported drift | one `verify-maintain` for the whole feature, not one per ticket |
+
+radar checks for the skill itself (`ls .claude/skills/`); it never asks you
+whether one exists. Changes nobody can see — refactors, tests, tooling, docs —
+never get `verify` proposed.
 
 What holds for all three:
 

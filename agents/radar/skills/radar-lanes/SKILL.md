@@ -21,7 +21,7 @@ that lane in one line.
 | Lane | Signals | Chain | State file? |
 |---|---|---|---|
 | **0 · chat** | A question, no imperative to change the repo: "wie funktioniert…", "wo liegt…", "warum…" | answer, or one `explore` | no |
-| **1 · quick** | Scoped imperative change, no ticket, obviously small: bump a dep, fix a typo, add a null check in a named file | `implement` → `deliver?` | no |
+| **1 · quick** | Scoped imperative change, no ticket, obviously small: bump a dep, fix a typo, add a null check in a named file | `implement` → `deliver?` (`verify` as the second option when user-facing, §2b) | no |
 | **2 · ticket** | A ticket reference is present (`#412`, an issue URL), or "setz das um" against known work | `implement` → `review` → `verify?` → `deliver` | no |
 | **3 · feature** | New capability, no ticket yet, scope not yet pinned: "ich möchte X bauen" | `grill` → `spec` → `tickets` → then lane 2 per ticket | yes |
 
@@ -88,10 +88,10 @@ Then report as usual: one line of result, one line proposing the next step
 | `implement` | `coder` | implement | a ticket **or** a plain instruction | branch + **uncommitted** diff, gates run | `review` |
 | `design` | `designer` | implement | existing UI, explicit opt-in | presentation-only diff | `review` |
 | `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `verify?` / `deliver` |
-| `verify` | `verifier` | verify | a diff + its acceptance criteria | a verdict per feature, evidence on disk | `deliver` |
-| `verify-setup` | `verifier` | verify | a repo with a runnable app | `.claude/skills/verify-<app>/`, proven once, **uncommitted** | `deliver` |
+| `verify` | `verifier` | verify | a diff + its acceptance criteria | a verdict per feature, evidence on disk | `deliver` (or `verify-maintain` first when the skill blocked it) |
+| `verify-setup` | `verifier` | verify | a repo with a runnable app | `.claude/skills/verify-<app>/`, proven once, **uncommitted** | `verify` for the change at hand, else `deliver` |
 | `verify-maintain` | `explorer`s, then `verifier` | explore, verify | an existing `verify-<app>` skill | corrections to it, **uncommitted** — or `clean` | `deliver` |
-| `deliver` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
+| `deliver` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `verify-maintain?` when `verify` reported drift, else `learn?` |
 | `learn` | **radar itself** | — | a correction or a re-run | one line in `.omnigent/learnings.md` | — |
 
 `onboard` stays with radar because it is a handful of deterministic git
@@ -119,28 +119,51 @@ that is a lookup, not an investigation.
 
 ### When to propose `verify`
 
-- **After `review`, in lane 2** — and only when both hold: a `verify-<app>`
-  skill exists, and the change touches something a user can see or run (a
-  route, a view, a command, an API response, a migration they would notice).
-  Then it is the default next step. When either fails, propose `deliver`.
-  The one exception: no skill exists, the change is user-facing, and you
-  have not offered it this session — then the `deliver` ask carries one more
-  option, `erst verify-setup`, after its default. Never more than that, and
-  never twice.
-- **Fixes first.** When `review` came back CHANGES-REQUESTED, the fix round
-  comes before `verify`; there is no point proving a tree that is about to
-  change.
-- **Lane 1 never proposes it.** It stays available when the human asks.
-- **The human asks for `verify` and the project has no skill** → one line:
+**Look before you ask.** The first time in a session that a change touches
+something a user can see or run — a route, a view, a command, an API response,
+a migration they would notice — run `ls .claude/skills/` and remember whether a
+`verify-<app>` skill exists. Never ask the human whether one exists; that is
+yours to find out, and the answer does not change within a session unless
+`verify-setup` runs.
 
-      Kein verify-<app>-Skill im Projekt. Erst verify-setup? [ja / ad hoc verifizieren / weglassen]
+A change that is not user-facing — a refactor behind a stable interface, a
+test-only change, build tooling, docs — never gets `verify` proposed. When the
+human asks for it anyway, dispatch it; the verifier returns `n/a` if it
+agrees.
 
-  `ad hoc` dispatches `verify` anyway; the verifier drives the surface without
-  a recipe and says so. Offer `verify-setup` once per session; a declined offer
-  is not repeated.
+Where it is proposed, by lane:
 
-Starting the app is a side effect, so the ask spells it out, the same way the
-`deliver` ask does:
+| Lane | Skill exists | No skill yet |
+|---|---|---|
+| **2 · ticket** (and lane 3 per ticket), after `review` | `verify` is the **default** next step | `verify-setup` then `verify` is the **default** next step |
+| **1 · quick**, after `implement` | `deliver` stays the default; `verify` is the **second option** | `deliver` stays the default; `erst prüfen` is the second option, and it means setup then verify |
+
+Lane 1 keeps `deliver` first because a quick change should stay one word from
+done; the option is there so a user-facing quick change is never shipped
+without the question being asked.
+
+**No skill yet → one ask that covers both steps**, with the effects spelled
+out, because it is the more expensive path:
+
+```
+verify? Kein Verification-Skill im Projekt.
+- verify-setup: legt `.claude/skills/verify-<app>/` an (Launch, Doctor, Drive, Feature-Map) und beweist ihn einmal
+- danach verify: startet die App lokal und treibt die Features, die der Diff berührt
+- beides uncommitted auf `<branch>`, geht mit dem nächsten deliver raus
+
+[ja / ad hoc prüfen / ohne verify]
+```
+
+- **`ja`** → dispatch `verify-setup`. When it returns `done`, report it in
+  one line and dispatch `verify` for the change **in the same turn, without
+  asking again** — the yes covered both. When it returns `blocked`, report that and ask between
+  `ad hoc prüfen` and `deliver`.
+- **`ad hoc prüfen`** → dispatch `verify` without a skill; the verifier drives
+  the surface without a recipe and says so.
+- **`ohne verify`** → `deliver`. **A declined setup is not offered again in
+  this session**; from then on, offer `verify` only when the human asks.
+
+**Skill exists → the usual ask:**
 
 ```
 verify starten?
@@ -155,6 +178,10 @@ That yes covers running the app on this machine. A network step the launch
 needs — an install, a browser download, an image pull — is a separate yes
 (§4b); if the human already gave it in this lane, say so in the brief's
 Context.
+
+**Fixes first.** When `review` came back CHANGES-REQUESTED, the fix round
+comes before `verify`; there is no point proving a tree that is about to
+change. After the fix, `review` again, then `verify`.
 
 ### The `verify` brief
 
@@ -179,12 +206,14 @@ the evidence path in the brief.
 Neither belongs to a lane. Both change only the project's verification skill
 and leave that change **uncommitted** for `deliver`, so both need a branch.
 
-- **Standalone** (the usual case): name a branch per `vcs.md` in the brief
-  (e.g. `chore/verify-<app>`); the verifier creates it from a clean tree. A
-  dirty tree with unrelated work is a reason to ask first, not to switch.
-- **Mid-lane**, because the human wants `verify` now and there is no skill
-  yet: stay on the lane's branch. The skill then ships with the feature, and
-  the `deliver` ask says so.
+- **Mid-lane** — `verify-setup` before the first `verify`, or
+  `verify-maintain` because the skill blocked a `verify`: stay on the lane's
+  branch. The skill or its corrections then ship with the change, and the
+  `deliver` ask says so.
+- **Standalone** — on request, or `verify-maintain` proposed after `deliver`
+  or at the end of a feature: name a branch per `vcs.md` in the brief (e.g.
+  `chore/verify-<app>`); the verifier creates it from a clean tree. A dirty
+  tree with unrelated work is a reason to ask first, not to switch.
 
 `verify-setup` is one dispatch. Tell the verifier what the human said about
 the surface, if anything; it finds the rest from the repo.
@@ -207,6 +236,45 @@ the surface, if anything; it finds the rest from the repo.
 `changed` → propose `deliver`, which ships the corrections as one PR. `clean`
 → nothing to ship; say so in one line. A product regression → offer it as an
 `implement` (or a ticket), never fold it into the skill's PR.
+
+### When to propose `verify-maintain`
+
+Never on a timer; at the points where the skill has just been shown to be
+behind the app. All three come from what the `verifier` itself reported, so
+you are relaying, not judging:
+
+1. **`verify` came back `blocked` because of the skill** — a launch command,
+   a port variable or a doctor check that no longer matches the app. Without
+   a working harness there is no proof at all, so ask **before** `deliver`,
+   on the lane's branch (the corrections ship with the change):
+
+       verify blockiert: der Skill passt nicht mehr zur App (<Grund aus next:>).
+       [verify-maintain jetzt / deliver ohne verify]
+
+   After `verify-maintain` returns `changed`, dispatch `verify` again.
+2. **`verify` passed, but its `next:` carries a `drift:` item** — a recipe it had to
+   drive differently, an acceptance criterion no mapped feature covered, a
+   new surface missing from the map. Nothing blocks the change, so it ships
+   first; propose `verify-maintain` **after `deliver`**, standalone on its own
+   branch, as the next step.
+3. **A lane-3 feature is finished** — the last ticket is delivered — and any
+   of its tickets' `verify` runs carried a `drift:` item. Do **not** offer maintenance
+   after every ticket of a feature; collect the drift instead (`verify_drift`
+   in `state.json`, §6) and propose one `verify-maintain` when the feature is
+   done. A feature typically adds a surface the map does not know yet, and one
+   pass after the last ticket puts it in once.
+
+The ask names what it found:
+
+```
+verify-maintain? verify hat Drift gemeldet:
+- Tags fehlen in der Feature-Map (verify-21)
+- Filter-Rezept nutzt alten Selektor (verify-22)
+
+[ja, eigener PR / später]
+```
+
+`später` is not re-offered for the same drift in this session.
 
 ## 3. The ask format
 
@@ -451,7 +519,7 @@ Gib mir HÖCHSTENS 8 Zeilen zurück, genau diese Felder:
   features: <feature → verified|failed|unreachable|not run>, …
   findings: <Produktfehler, je `feature — was passiert` mit Belegpfad> | -
   changed:  <Dateien im Skill-Verzeichnis> | -
-  next:     <Drift, offene Voraussetzungen, nächster Schritt> | -
+  next:     <je Punkt eine Zeile; Drift am Skill mit `drift:` davor> | -
   report:   .omnigent/runs/<run-id>/report.md
 Keine Prosa außerhalb dieser Felder.
 Arbeite still: keine Zwischenkommentare zwischen Tool-Calls. Deine GESAMTE
@@ -799,9 +867,14 @@ feature needs `.omnigent/state.json`, because it outlives a session:
   "design": false,
   "tickets": ["<url>", "..."],
   "active": "<url>",
-  "done": ["<url>"]
+  "done": ["<url>"],
+  "verify_drift": [".omnigent/runs/verify-21/report.md"]
 }]}
 ```
+
+`verify_drift` collects the report of every `verify` run in this feature whose
+`next:` reported drift. It drives the end-of-feature `verify-maintain`
+proposal (§2b) and is cleared when that runs.
 
 Read only the active task, never the whole file:
 `jq '.tasks[] | select(.active != null)' .omnigent/state.json`.

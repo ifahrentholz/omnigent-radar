@@ -40,8 +40,11 @@ line names it when radar found one.
   package scripts, Makefile) for the launch command.
 
 During this step the verification skill is read-only to you. A recipe that is
-wrong, a selector that moved, a feature the map is missing: each is drift, and
-drift goes into `next:` for `verify-maintain`, never into an edit.
+wrong, a selector that moved, a feature the map is missing, an acceptance
+criterion no mapped feature covers: each is drift, and drift goes into `next:`
+as its own item starting with `drift:`, never into an edit. radar reads that
+prefix to decide when to propose `verify-maintain`, so do not use it for
+anything else, and do not leave it off real drift.
 
 ## 3. Choose the features
 
