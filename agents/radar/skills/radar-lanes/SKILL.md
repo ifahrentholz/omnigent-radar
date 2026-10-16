@@ -22,7 +22,7 @@ that lane in one line.
 |---|---|---|---|
 | **0 · chat** | A question, no imperative to change the repo: "wie funktioniert…", "wo liegt…", "warum…" | answer, or one `explore` | no |
 | **1 · quick** | Scoped imperative change, no ticket, obviously small: bump a dep, fix a typo, add a null check in a named file | `implement` → `deliver?` | no |
-| **2 · ticket** | A ticket reference is present (`#412`, an issue URL), or "setz das um" against known work | `implement` → `review` → `deliver` | no |
+| **2 · ticket** | A ticket reference is present (`#412`, an issue URL), or "setz das um" against known work | `implement` → `review` → `verify?` → `deliver` | no |
 | **3 · feature** | New capability, no ticket yet, scope not yet pinned: "ich möchte X bauen" | `grill` → `spec` → `tickets` → then lane 2 per ticket | yes |
 
 **When the lane is ambiguous, propose the CHEAPER one.** Escalating mid-task
@@ -30,8 +30,10 @@ costs the human one word ("mach draus ein Feature"); running ceremony that was
 never needed costs a spec, a ticket, and twenty minutes. Cheap-by-default is the
 whole design.
 
-Two things are *not* lanes and can be requested at any time: `onboard` (see the
-`radar-onboard` skill) and `learn` (see the `radar-learn` skill).
+Some things are *not* lanes and can be requested at any time: `onboard` (see the
+`radar-onboard` skill), `learn` (see the `radar-learn` skill), and the two
+steps that look after the project's verification skill, `verify-setup` and
+`verify-maintain` (§2b).
 
 ## 1b. Annotations from the changed-files view
 
@@ -85,7 +87,10 @@ Then report as usual: one line of result, one line proposing the next step
 | `tickets` | `ticketer` | implement | a spec | issue URLs, in dependency order | `implement` |
 | `implement` | `coder` | implement | a ticket **or** a plain instruction | branch + **uncommitted** diff, gates run | `review` |
 | `design` | `designer` | implement | existing UI, explicit opt-in | presentation-only diff | `review` |
-| `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `deliver` |
+| `review` | `reviewer` | review | a diff + its acceptance criteria | findings vs criteria, gates re-run | `verify?` / `deliver` |
+| `verify` | `verifier` | verify | a diff + its acceptance criteria | a verdict per feature, evidence on disk | `deliver` |
+| `verify-setup` | `verifier` | verify | a repo with a runnable app | `.claude/skills/verify-<app>/`, proven once, **uncommitted** | `deliver` |
+| `verify-maintain` | `explorer`s, then `verifier` | explore, verify | an existing `verify-<app>` skill | corrections to it, **uncommitted** — or `clean` | `deliver` |
 | `deliver` | `scribe` | implement | a dirty branch | commit, push, MR/PR opened | `learn?` |
 | `learn` | **radar itself** | — | a correction or a re-run | one line in `.omnigent/learnings.md` | — |
 
@@ -97,6 +102,111 @@ it cannot hold a dialogue. Everything else is delegated, always.
 
 **`design` is opt-in and stays unused by default.** Dispatch it only on an
 explicit yes. Never infer it from a ticket that merely sounds visual.
+
+## 2b. Verification on the real surface
+
+`review` and `verify` answer different questions, and neither stands in for
+the other. `review` asks whether the code agrees with its tests and its
+contract. `verify` asks what the app does when a user touches it: the
+`verifier` launches it, drives the features the change can affect, and returns
+a verdict per feature with evidence on disk.
+
+The harness is the **project's own verification skill**,
+`.claude/skills/verify-<app>/`. It shows up in your listing as `verify-<app>`,
+without the `radar-` prefix, because the project owns it (§4b). When you are
+not sure whether one exists, `ls .claude/skills/` answers it in one command;
+that is a lookup, not an investigation.
+
+### When to propose `verify`
+
+- **After `review`, in lane 2** — and only when both hold: a `verify-<app>`
+  skill exists, and the change touches something a user can see or run (a
+  route, a view, a command, an API response, a migration they would notice).
+  Then it is the default next step. When either fails, propose `deliver`.
+  The one exception: no skill exists, the change is user-facing, and you
+  have not offered it this session — then the `deliver` ask carries one more
+  option, `erst verify-setup`, after its default. Never more than that, and
+  never twice.
+- **Fixes first.** When `review` came back CHANGES-REQUESTED, the fix round
+  comes before `verify`; there is no point proving a tree that is about to
+  change.
+- **Lane 1 never proposes it.** It stays available when the human asks.
+- **The human asks for `verify` and the project has no skill** → one line:
+
+      Kein verify-<app>-Skill im Projekt. Erst verify-setup? [ja / ad hoc verifizieren / weglassen]
+
+  `ad hoc` dispatches `verify` anyway; the verifier drives the surface without
+  a recipe and says so. Offer `verify-setup` once per session; a declined offer
+  is not repeated.
+
+Starting the app is a side effect, so the ask spells it out, the same way the
+`deliver` ask does:
+
+```
+verify starten?
+- startet die App lokal nach `verify-notes` (eigener Port, Wegwerf-Daten)
+- treibt die Features, die der Diff berührt
+- Belege nach `.omnigent/runs/verify-412/evidence/`
+
+[ja / nein, direkt deliver]
+```
+
+That yes covers running the app on this machine. A network step the launch
+needs — an install, a browser download, an image pull — is a separate yes
+(§4b); if the human already gave it in this lane, say so in the brief's
+Context.
+
+### The `verify` brief
+
+Like the reviewer's, and for the same reason: **the branch, the changed paths
+and the acceptance criteria, nothing else.** Never the coder's report, summary
+or reasoning. A verifier that knows what the implementer intended starts
+proving the intention.
+
+- `Projekt-Skill:` names the `verify-<app>` skill.
+- `Context` lists the changed paths, taken from `git status --porcelain -uall`,
+  and one line `Freigegeben: App lokal starten und treiben` plus any network
+  step the human approved.
+- `Acceptance` restates the criteria verbatim, as always (§4).
+- The Return block is the verifier's own (§4).
+
+A `fail` is a finding like a reviewer's BLOCKER: render every failed feature
+in the report, and propose a fix round to the `coder` before `deliver`, with
+the evidence path in the brief.
+
+### `verify-setup` and `verify-maintain`
+
+Neither belongs to a lane. Both change only the project's verification skill
+and leave that change **uncommitted** for `deliver`, so both need a branch.
+
+- **Standalone** (the usual case): name a branch per `vcs.md` in the brief
+  (e.g. `chore/verify-<app>`); the verifier creates it from a clean tree. A
+  dirty tree with unrelated work is a reason to ask first, not to switch.
+- **Mid-lane**, because the human wants `verify` now and there is no skill
+  yet: stay on the lane's branch. The skill then ships with the feature, and
+  the `deliver` ask says so.
+
+`verify-setup` is one dispatch. Tell the verifier what the human said about
+the surface, if anything; it finds the rest from the repo.
+
+`verify-maintain` is two steps, because the verifier cannot dispatch:
+
+1. **The source wave — a fanout of `explorer`s**, one per feature file under
+   `.claude/skills/verify-<app>/features/` (not the README). At most six
+   dispatches per turn: with more files, give each explorer a contiguous group
+   of them. Each brief asks, read-only: how does this user-facing feature work
+   from source, where does the feature file drift from it (with `file:line`),
+   and one live-verification recipe. Use the explore Return block. A fanout is
+   one step (§3): report nothing until the last one is in.
+2. **The `verifier`**, with `verify-maintain` in the Task and the explorers'
+   report paths in `Context`. It reconciles, drives every feature live, fixes
+   the skill under its edit scope, and returns `clean`, `changed` or
+   `blocked`. Product regressions it found come back as findings, never as
+   edits.
+
+`changed` → propose `deliver`, which ships the corrections as one PR. `clean`
+→ nothing to ship; say so in one line. A product regression → offer it as an
+`implement` (or a ticket), never fold it into the skill's PR.
 
 ## 3. The ask format
 
@@ -326,6 +436,33 @@ Schreib die vollständige Antwort nach `.omnigent/runs/<run-id>/report.md`
 Pass that answer through to the human as it came back. Do not re-summarize it
 and do not re-verify it — you did not do the reading.
 
+**The `verifier` returns verdicts, not a diff summary.** For `verify`,
+`verify-setup` and `verify-maintain`, replace the Return block with:
+
+```
+## Return
+Schreib deinen vollen Report nach `.omnigent/runs/<run-id>/report.md` und die
+Belege nach `.omnigent/runs/<run-id>/evidence/` — RELATIVE Pfade, genau so.
+Gib mir HÖCHSTENS 8 Zeilen zurück, genau diese Felder:
+  result:   pass | partial | fail | blocked | n/a          (verify)
+            done | blocked                                 (verify-setup)
+            clean | changed | blocked                      (verify-maintain)
+  harness:  verify-<app> | ad hoc
+  features: <feature → verified|failed|unreachable|not run>, …
+  findings: <Produktfehler, je `feature — was passiert` mit Belegpfad> | -
+  changed:  <Dateien im Skill-Verzeichnis> | -
+  next:     <Drift, offene Voraussetzungen, nächster Schritt> | -
+  report:   .omnigent/runs/<run-id>/report.md
+Keine Prosa außerhalb dieser Felder.
+Arbeite still: keine Zwischenkommentare zwischen Tool-Calls. Deine GESAMTE
+Ausgabe landet im Kontext des Orchestrators, nicht nur die letzte Nachricht —
+gib Text genau einmal aus, am Ende, in genau diesem Format.
+```
+
+Render `features:` and `findings:` in the report the way §3 renders review
+findings — one list item each, failed features first, never trimmed. The
+human decides `deliver` on exactly those lines.
+
 ## 4b. What the project tells you to do
 
 Every skill in this bundle is named `radar-…`. Anything in your listing without
@@ -413,6 +550,7 @@ you remember from another project.
 | `designer` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
 | `scribe` | `claude-sonnet-5-5` | `claude-opus-5-5` | `claude-sonnet-5-5` |
 | **`reviewer`** | — **send no `args.model`, ever** — | | `claude-opus-5-5` |
+| **`verifier`** | — **send no `args.model`, ever** — | | `claude-opus-5-5` |
 
 Two tiers, not three. `claude-sonnet-5-5` is fast and strongest on work whose
 edges are already drawn, which is exactly what SIMPLE and MODERATE describe; it
@@ -439,10 +577,17 @@ that can override a spec pin, so omitting it *is* the mechanism, not an absence
 of one. Omitting it also keeps its 1M `context_window` out of reach of a routed pick,
 which would silently break it.
 
-The reason it is pinned at all: its gate re-run is the only verification in this
-bundle, and a cheaper reviewer saves money by weakening the one step that
-catches what everything else missed. Never offer the human a "cheaper review" —
-there is no such thing here, only a weaker one.
+The reason it is pinned at all: its gate re-run is the only place the project's
+gates are checked independently, and a cheaper reviewer saves money by
+weakening the one step that catches what everything else missed. Never offer
+the human a "cheaper review" — there is no such thing here, only a weaker one.
+
+**The `verifier` is pinned the same way, for the same reason.** It is the other
+verification step: a cheaper verifier produces a `verified` nobody downstream
+re-checks. Sending it no model also keeps its 1M `context_window` intact, which
+a maintenance pass driving every feature in one session needs. `verify-setup`
+and `verify-maintain` included — they are COMPLEX by nature, and the pin is
+already the strong tier.
 
 ### How to classify
 
@@ -504,12 +649,13 @@ At **result**, as its own block directly below the status line:
 MODERATE → `claude-sonnet-5-5`
 ```
 
-The **`reviewer`** is never sent a model, so it has no tier to report. Its line
-says that instead of inventing one — the pinned model, and that its tier is not
-routed:
+The **`reviewer`** and the **`verifier`** are never sent a model, so they have
+no tier to report. Their line says that instead of inventing one — the pinned
+model, and that the tier is not routed:
 
 ```
 **▸ review** · not routed → `claude-opus-5-5` (pin)
+**▸ verify** · not routed → `claude-opus-5-5` (pin)
 ```
 
 **Fanouts:** one line per worker, or one line for a group that shares the same
@@ -542,9 +688,9 @@ So a follow-up is classified like any other dispatch:
    so the brief carries what it needs as paths — the branch, the previous run's
    report — never as pasted contents.
 
-   Exception: the `reviewer` is never sent `args.model`, follow-ups included.
-   It stays on its pin, so there is no model to compare and no reason to
-   open a fresh session on that account.
+   Exception: the `reviewer` and the `verifier` are never sent `args.model`,
+   follow-ups included. They stay on their pin, so there is no model to
+   compare and no reason to open a fresh session on that account.
 
 To know what a session is running, keep the model you sent with each `title`
 when you dispatch it. The routing line goes out for follow-ups exactly as for
@@ -577,7 +723,7 @@ the worker's menu as `models`, and pass its pick through instead of your own. It
 is an independent judge and it does not spend your context.
 
 Everything else in this section still holds when you use it — the floors, the
-`reviewer` exclusion, follow-up sends, and the routing line. A recommendation below a floor is
+`reviewer` and `verifier` exclusions, follow-up sends, and the routing line. A recommendation below a floor is
 **not** followed; send the floor instead.
 
 ## 5. Per-worker notes
@@ -600,8 +746,17 @@ Everything else in this section still holds when you use it — the floors, the
   never receive is the coder's report, summary or reasoning. Independence here
   comes from context isolation, not from a different vendor: a reviewer that can
   see *why* the implementer did something starts agreeing with it, and then
-  reviews the intention instead of the code. Its gate re-run *is* the
-  verification step in this bundle — the only one.
+  reviews the intention instead of the code. Its gate re-run is the only
+  independent check of the project's gates in this bundle.
+
+- **`verifier`** — the other verification step: it proves the change on the
+  real surface through the project's `verify-<app>` skill (§2b). Same brief
+  discipline as the reviewer — branch, changed paths, acceptance criteria,
+  never the coder's report. It writes only evidence under
+  `.omnigent/runs/<run-id>/` and, for `verify-setup` and `verify-maintain`,
+  the skill directory itself, which it leaves uncommitted. It never edits
+  product code: a broken feature comes back as a `fail` with evidence, and the
+  fix is an `implement`.
 
 - **`explorer`** — read-only. Use for anything you are tempted to go look up
   yourself. Fan out several in parallel over disjoint questions rather than
@@ -658,5 +813,6 @@ is the rigidity this bundle exists to avoid.
 ## 7. Run artifacts
 
 `.omnigent/runs/<run-id>/report.md` — one per dispatch, written by the worker.
+The `verifier` adds `.omnigent/runs/<run-id>/evidence/` beside it.
 Link them, never quote them. They are gitignored; only `project/`,
 `learnings.md` and `state.json` are committed.

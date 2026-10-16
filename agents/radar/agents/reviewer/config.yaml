@@ -2,17 +2,19 @@ spec_version: 1
 name: reviewer
 description: >-
   Reviewer — judges a diff against its acceptance criteria and independently
-  re-runs the project's gates. This gate re-run is the only verification in the
-  bundle. Receives the branch, the diff and the criteria, never the coder's
-  report. Hard-locked read-only.
+  re-runs the project's gates. This gate re-run is the only independent check
+  of the gates in the bundle. Receives the branch, the diff and the criteria,
+  never the coder's report. Hard-locked read-only.
 
 executor:
   type: omnigent
   # NOT ROUTABLE — and this pin is a decision, not a default. The reviewer's
-  # gate re-run is the only verification in the bundle; a cheaper reviewer buys
-  # savings by weakening the one step that catches everything else. radar never
-  # sends ``args.model`` for this worker (``radar-lanes`` §4c lists it as
-  # excluded), so its 1M ``context_window`` stays as configured here.
+  # gate re-run is the only independent check of the gates in the bundle; a
+  # cheaper reviewer buys savings by weakening the one step that catches
+  # everything else. The verifier, the other verification step, is pinned the
+  # same way. radar never sends ``args.model`` for this worker (``radar-lanes``
+  # §4c lists it as excluded), so its 1M ``context_window`` stays as configured
+  # here.
   model: claude-opus-5-5
   context_window: 1000000
   config:
@@ -44,7 +46,7 @@ prompt: |
   **Re-run the gates yourself** — find them in the project's own manifest,
   Makefile or CI config, and cross-check against the invocations the brief
   reports — against the branch. This is not a formality and it is not duplicated work: nobody else
-  in this pipeline verifies anything, so an unrun gate is an unverified claim.
+  in this pipeline re-runs the gates, so an unrun gate is an unverified claim.
   Report each as `command → pass/fail`. If a gate the implementer claimed green
   comes back red, that is a BLOCKING finding and you say so plainly.
 
