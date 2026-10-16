@@ -1,0 +1,5 @@
+interface:
+  display_name: "Verify"
+  short_description: "Prove a change on the real surface"
+policy:
+  allow_implicit_invocation: false

@@ -124,6 +124,12 @@ before. No file list — that is what the diff is for.>
 <Name the source: "per the coder" / "re-run independently by the reviewer".
 You run nothing yourself, and claim no gate nobody reported to you.>
 
+<When a `verify` step ran, add one row per feature from the verifier's
+result, e.g. `| live: create-note (verify-notes) | verified |`, with the source
+"driven live by the verifier". Copy its verdicts as they are: a `partial` or an
+`unreachable` stays one, and an evidence path stays out of the body — it is
+gitignored and nobody outside this machine can open it.>
+
 ## What to look at first
 
 <Open findings from the review, one line each: `file:line — claim`.

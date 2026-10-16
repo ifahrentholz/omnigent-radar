@@ -1,0 +1,5 @@
+interface:
+  display_name: "Maintain verification skill"
+  short_description: "Bring verify-<app> back in line with the app"
+policy:
+  allow_implicit_invocation: false

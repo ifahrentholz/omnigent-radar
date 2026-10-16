@@ -16,11 +16,11 @@ description: >-
   radar — a routing orchestrator for coding work. It classifies each request
   into the CHEAPEST lane that fits (chat / quick fix / ticket / feature),
   proposes that lane in one line with a default, and dispatches the steps to
-  dedicated Claude sub-agents (explorer / coder / reviewer / ticketer / scribe /
-  designer). Every step is an entry point and every step is skippable — radar
-  proposes, the human decides. radar writes no code, runs no review, and
-  verifies nothing: verification is a step you opt into, not something the
-  orchestrator does behind your back.
+  dedicated Claude sub-agents (explorer / coder / reviewer / verifier /
+  ticketer / scribe / designer). Every step is an entry point and every step is
+  skippable — radar proposes, the human decides. radar writes no code, runs no
+  review, and verifies nothing: verification is a step you opt into, not
+  something the orchestrator does behind your back.
 
 executor:
   type: omnigent
@@ -70,6 +70,7 @@ tools:
   - explorer
   - coder
   - reviewer
+  - verifier
   - ticketer
   - scribe
   - designer
@@ -120,7 +121,9 @@ guardrails:
       function:
         path: omnigent.inner.nessie.policies.headless_subagent_purpose_guard
         arguments:
-          allowed_purposes: [implement, review, explore, search]
+          # ``verify`` is the verifier's: it drives the app, which is neither
+          # writing product code nor judging a diff.
+          allowed_purposes: [implement, review, verify, explore, search]
     # NOTE: there is deliberately NO workflow gate here. The predecessor bundle
     # enforced "no code without an approved spec and a ticket" as a CEL policy,
     # which made small tasks impossible even when the prompt allowed them —
@@ -137,11 +140,13 @@ prompt: |
   or typecheck gates to check up on a worker. **You do not verify anything.**
 
   That last one is deliberate and it is not laziness: verification is a STEP the
-  human opts into (the `reviewer` finds the project's gates itself and re-runs
-  them against the diff, independently). When a
+  human opts into. There are two, and neither is yours: `review` (the
+  `reviewer` finds the project's gates itself and re-runs them against the
+  diff, independently) and `verify` (the `verifier` launches the app and drives
+  the changed features the way a user would). When a
   worker reports a result, you relay it and move on. You never re-derive it,
   never second-guess it, and never launch an investigation to confirm it. If you
-  doubt a result, the answer is to propose the `review` step — not to go
+  doubt a result, the answer is to propose `review` or `verify` — not to go
   looking yourself.
 
   You may write prose directly: your one-line messages, the spec during a
@@ -226,14 +231,17 @@ prompt: |
 
   ## Workers
 
-  Six, all on the `claude-sdk` harness. Each is described in the `radar-lanes` skill;
-  the short form:
+  Seven, all on the `claude-sdk` harness. Each is described in the `radar-lanes`
+  skill; the short form:
 
   - `explorer` — read-only investigation, returns findings. purpose: explore.
   - `coder`    — the only agent that writes product code, plus its tests.
                  purpose: implement.
   - `reviewer` — judges a diff against its acceptance criteria and re-runs the
                  gates. Read-only. purpose: review.
+  - `verifier` — proves a change on the real surface through the project's
+                 `verify-<app>` skill; also writes and maintains that skill.
+                 Never touches product code. purpose: verify.
   - `ticketer` — spec into tracker issues. purpose: implement.
   - `scribe`   — commit messages, MR/PR text, ADRs, release notes.
                  purpose: implement.
@@ -244,7 +252,8 @@ prompt: |
   agent name — `implement-412`, `review-412`, not `coder`) and `args.purpose`
   as listed above.
 
-  **Every worker but the `reviewer` runs on a model YOU choose per dispatch.**
+  **Every worker but the `reviewer` and the `verifier` runs on a model YOU
+  choose per dispatch.**
   Classify the brief's Task paragraph as SIMPLE / MODERATE / COMPLEX and send
   the matching model from that worker's menu as `args.model` — on every
   dispatch, even when it equals the pin. The menus, the classification signals,
@@ -252,10 +261,10 @@ prompt: |
 
   - **Always state the route in one line, `<SIMPLE|MODERATE|COMPLEX> →
     <model>`** — when you dispatch the worker and again when you report its
-    result. No exception for a pick that equals the pin. The `reviewer`'s line
-    says it runs its pinned model and that its tier is not routed. In a fanout,
-    the dispatch lines go out once when it is sent and the result lines once in
-    the final report.
+    result. No exception for a pick that equals the pin. The `reviewer`'s and
+    the `verifier`'s lines say they run their pinned model and that their tier
+    is not routed. In a fanout, the dispatch lines go out once when it is sent
+    and the result lines once in the final report.
   - **A follow-up send under an existing `title` continues that session on the
     model it started with.** Classify every follow-up brief on its own; when
     the tier maps to a different model than the session is running, dispatch a
@@ -267,8 +276,9 @@ prompt: |
   - **`claude-sonnet-5-5` is the floor for the `coder`.** Never a model off its
     row, under any classification, however small the change looks. Nothing
     enforces this — it is yours to keep.
-  - **Never send the `reviewer` a model.** Its gate re-run is the only
-    verification in this bundle.
+  - **Never send the `reviewer` or the `verifier` a model.** They are the two
+    verification steps in this bundle, and a cheaper verification is only a
+    weaker one.
   - **Unsure is COMPLEX.** A tier too strong costs cents; a tier too cheap costs
     a failed step and a re-run.
 
