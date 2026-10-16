@@ -71,7 +71,11 @@ affect costs the human time and proves nothing about the change.
 ## 4. Launch and doctor
 
 Follow the verification skill's Launch section exactly, against disposable
-state: a fresh data directory, a port nobody else owns. Anything that keeps
+state: a fresh data directory, a port nobody else owns. If its one-time driver
+install has not run on this checkout (the skill ships a `package.json` but no
+`node_modules/`, typically on a fresh clone), run it only with
+`Freigegeben: Treiber-Abhängigkeiten installieren` in your brief, and from the
+skill's lockfile; without that line, return `blocked: needs <exact command>`. Anything that keeps
 running goes into a terminal (`sys_terminal_launch`), never behind `&` in
 `sys_os_shell`.
 

@@ -63,9 +63,13 @@ remove it in its own cleanup. That scaffolding lives in the skill's recipe,
 not as a committed file in the product tree.
 
 Installing dependencies, downloading a browser, pulling an image or any other
-network step needs the human's approval in your brief. When the launch needs
-one that was not approved, the generated skill still documents it, and you
-return `blocked: needs <exact command>` instead of running it.
+network step needs the human's approval in your brief. A line
+`Freigegeben: Treiber-Abhängigkeiten installieren` approves exactly one kind:
+installing the **driver's** dependencies into the skill directory, plus the
+browser binary that driver needs (§2, Driver dependencies). It does not cover
+the project's own dependencies, a global install, or anything else. When a step
+needs an approval that was not given, the generated skill still documents it,
+and you return `blocked: needs <exact command>` instead of running it.
 
 ## 2. Generate the skill
 
@@ -110,6 +114,30 @@ left):
   shown in the skill body, through its interpreter (`bash scripts/doctor.sh`,
   `node scripts/drive.mjs`) so it also runs where the executable bit was lost.
   A helper the reader has to reverse-engineer is not a helper.
+- **Driver dependencies:** prefer what the project already has — its own
+  Playwright or Cypress install, a test client in its dev dependencies — and
+  call it from the project root. When the driver needs a package the project
+  does not have, **the skill owns it, not the project**:
+  - a `package.json` (or `requirements.txt`, `go.mod`, …) **inside**
+    `.claude/skills/verify-<app>/`, with exact versions, and its lockfile
+    committed beside it;
+  - a `.gitignore` inside the skill directory for `node_modules/` (or the
+    virtualenv), so the install never shows up in `git status`;
+  - the install as a one-time step at the top of Launch, scoped to the skill
+    directory and reproducible from the lockfile:
+    `npm ci --prefix .claude/skills/verify-<app>`;
+  - for a browser driver, prefer an installed Chrome
+    (`chromium.launch({ channel: 'chrome' })`) over downloading one; when a
+    download is unavoidable, the exact command
+    (`npx --prefix .claude/skills/verify-<app> playwright install chromium`)
+    is part of that one-time step;
+  - Doctor checks the install is present and says the exact command when it
+    is not.
+
+  **Never add the driver to the project's own manifest** (`package.json`,
+  `pyproject.toml`, …) and never install it globally. The project's
+  dependency set is product code; a verification harness that changes it has
+  changed what ships.
 
 ## 3. Seed the feature map
 

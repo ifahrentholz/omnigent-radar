@@ -147,17 +147,31 @@ out, because it is the more expensive path:
 
 ```
 verify? Kein Verification-Skill im Projekt.
-- verify-setup: legt `.claude/skills/verify-<app>/` an (Launch, Doctor, Drive, Feature-Map) und beweist ihn einmal
+- verify-setup: legt `.claude/skills/verify-<app>/` an (Launch, Doctor, Drive, Feature-Map, Skripte) und beweist ihn einmal
+- installiert dabei die Treiber-Abhängigkeiten (z. B. Playwright) ins Skill-Verzeichnis — npm und ggf. Browser-Download, also Netz; nie in dein `package.json`
 - danach verify: startet die App lokal und treibt die Features, die der Diff berührt
-- beides uncommitted auf `<branch>`, geht mit dem nächsten deliver raus
+- alles uncommitted auf `<branch>`, geht mit dem nächsten deliver raus
 
-[ja / ad hoc prüfen / ohne verify]
+[ja / ohne Installation / ad hoc prüfen / ohne verify]
 ```
 
-- **`ja`** → dispatch `verify-setup`. When it returns `done`, report it in
-  one line and dispatch `verify` for the change **in the same turn, without
-  asking again** — the yes covered both. When it returns `blocked`, report that and ask between
-  `ad hoc prüfen` and `deliver`.
+The install line is in the ask because the first setup almost always needs
+it: a web app's driver is usually Playwright, and a project that does not
+already depend on it has to get it from the network. Asking here makes setup
+one round instead of a `blocked` and a second ask.
+
+- **`ja`** → dispatch `verify-setup` with
+  `Freigegeben: Treiber-Abhängigkeiten installieren` in its Context, and the
+  same line on the `verify` that follows.
+- **`ohne Installation`** → dispatch `verify-setup` without that line. If the
+  driver needs an install, the verifier writes the skill and its scripts
+  anyway and returns `blocked: needs <command>`; put that command to the
+  human as its own ask, and on a yes dispatch `verify-setup` again with the
+  approval line.
+- **After `verify-setup` returns `done`**, report it in one line and dispatch
+  `verify` for the change **in the same turn, without asking again** — the
+  yes covered both. When it returns `blocked` for any other reason, report
+  that and ask between `ad hoc prüfen` and `deliver`.
 - **`ad hoc prüfen`** → dispatch `verify` without a skill; the verifier drives
   the surface without a recipe and says so.
 - **`ohne verify`** → `deliver`. **A declined setup is not offered again in
@@ -173,6 +187,13 @@ verify starten?
 
 [ja / nein, direkt deliver]
 ```
+
+**A skill whose driver is not installed on this checkout** — it ships a
+`package.json` but has no `node_modules/`, typically after a fresh clone; one
+`ls` tells you — gets the install as one more line in that ask
+(`- installiert die Treiber-Abhängigkeiten aus dem Lockfile des Skills — npm, Netz`),
+and a yes puts `Freigegeben: Treiber-Abhängigkeiten installieren` into the
+brief. Ask it once per session per checkout, not on every `verify`.
 
 That yes covers running the app on this machine. A network step the launch
 needs — an install, a browser download, an image pull — is a separate yes

@@ -254,8 +254,14 @@ What holds for all three:
   under `.omnigent/runs/` and, for setup and maintenance, the skill itself —
   nothing else, and nothing committed.
 - **Starting the app is asked for.** The `verify` question spells out that it
-  runs the app locally. Installing dependencies or downloading a browser is a
-  separate yes, as everywhere in radar.
+  runs the app locally. Installing dependencies or downloading a browser needs
+  a yes too, as everywhere in radar — the `verify-setup` question includes it,
+  since a first setup usually needs a driver such as Playwright.
+- **The skill brings its own driver.** Launch, doctor and drive scripts
+  (`.sh`, `.mjs`, …) live in `.claude/skills/verify-<app>/scripts/`. A driver
+  dependency your project does not already have goes into a `package.json`
+  and lockfile **inside the skill directory**, with its `node_modules/`
+  gitignored there — never into your project's own manifest.
 - **Kill what you started, keep what you proved.** Cleanup stops the
   processes the run launched, never a dev server of yours on the same port,
   and leaves the evidence in place.

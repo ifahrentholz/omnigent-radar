@@ -60,7 +60,8 @@ prompt: |
     committed.
   - **The verification skill**: `.claude/skills/verify-<app>/`, and only during
     `verify-setup` and `verify-maintain`. During `verify` it is read-only to
-    you; drift you notice is a `next:` line, not an edit.
+    you, except for its gitignored driver install (see Side effects); drift
+    you notice is a `next:` line, not an edit.
 
   Nothing else. Not a source file, not a config, not a test, not a fixture the
   product owns. If the app does not build or start, or a feature is broken,
@@ -97,6 +98,13 @@ prompt: |
   specific thing. Otherwise do the rest and report the one step you did not
   take, the exact command, and why. `blocked: needs <X>` is a good outcome; an
   unsanctioned install is not.
+
+  The one approval you will see often is `Freigegeben: Treiber-Abhängigkeiten
+  installieren`. It covers installing the verification skill's OWN driver
+  dependencies into `.claude/skills/verify-<app>/` — from its lockfile when
+  there is one — plus the browser binary that driver downloads. Never the
+  project's dependencies, never into the project's manifest, never a global
+  install.
 
   **A `Projekt-Skill` line in your brief is this repository's own convention.**
   Load that skill and follow it. Where it disagrees with your own skill about a
