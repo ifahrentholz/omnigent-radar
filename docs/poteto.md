@@ -75,8 +75,14 @@ bundle's skill, so `/tdd` and `/teach` reach pstack's even when
 It writes `.claude/skills/verify-<app>/` into the project: how to launch the
 app, check it is healthy, drive it like a user, capture evidence and clean up,
 plus a feature map. poteto's playbooks use it from then on, and so can any
-other agent working in that project, radar's reviewer included.
-`poteto:maintain-verification-skill` keeps it honest as the app changes.
+other agent working in that project: radar's `verifier` drives the app with
+it in its `verify` step. `poteto:maintain-verification-skill` keeps it honest
+as the app changes.
+
+radar ships its own adapted copies of both skills (`verify-setup` and
+`verify-maintain` there; see `agents/radar/agents/verifier/UPSTREAM.md`).
+Either agent's version writes the same `.claude/skills/verify-<app>/`, so a
+skill one of them created, the other can use and maintain.
 
 ## What appears in your project
 

@@ -75,19 +75,24 @@ flowchart LR
 
     grill:::l3 --> spec:::l3 --> tickets:::l3 --> implement:::l2
     implement --> review:::l2 --> deliver:::l2
+    review -.-> verify:::l2 -.-> deliver
 ```
 
 | Lane | You say | Chain | State? |
 |---|---|---|---|
 | **0 · chat** | *"how does the auth flow work?"* | answer, or one `explore` | no |
-| **1 · quick** | *"bump the lockfile"* | `implement` → `deliver?` | no |
-| **2 · ticket** | *"implement #412"* | `implement` → `review` → `deliver` | no |
+| **1 · quick** | *"bump the lockfile"* | `implement` → `deliver?` (or `verify`) | no |
+| **2 · ticket** | *"implement #412"* | `implement` → `review` → `verify?` → `deliver` | no |
 | **3 · feature** | *"I want to build X"* | `grill` → `spec` → `tickets` → lane 2 per ticket | yes |
 
 - **Ambiguous → the cheaper lane.** You can always say "make it a feature".
 - **Enter anywhere.** Missing a spec is mentioned, not enforced.
 - **Not lanes, available any time:** `onboard` (derive repo conventions once),
-  `learn` (record a lesson).
+  `learn` (record a lesson), `verify-setup` and `verify-maintain` (write and
+  upkeep the project's verification skill).
+- **`verify?`** is offered whenever the change touches something a user can
+  see or run — as the default in lane 2, as the second option in lane 1. See
+  [Verification on the real surface](#verification-on-the-real-surface).
 
 ### After every step
 
@@ -120,6 +125,9 @@ blocked step, a failed worker.
 | `implement` | `coder` | branch, **uncommitted** diff, gates run |
 | `design` | `designer` (opt-in) | presentation-only diff |
 | `review` | `reviewer` | findings, gates re-run, risk map |
+| `verify` | `verifier` | a verdict per feature, driven live, evidence on disk |
+| `verify-setup` | `verifier` | `.claude/skills/verify-<app>/`, proven once, uncommitted |
+| `verify-maintain` | `explorer`s → `verifier` | corrections to that skill, uncommitted — or `clean` |
 | `deliver` | `scribe` | commit, push, MR/PR opened |
 | `learn` | orchestrator | one line in `.omnigent/learnings.md` |
 
@@ -133,6 +141,7 @@ conversations — a sub-agent runs autonomously and cannot hold a dialogue.
 | `explorer` | `claude-sonnet-5-5` | yes | – | in effect (`worktree_guard`) |
 | `coder` | `claude-opus-5-5` | yes, never below sonnet | – | – |
 | `reviewer` | `claude-opus-5-5` (1M window) | **never** | – | yes (`read_only_os`) |
+| `verifier` | `claude-opus-5-5` (1M window) | **never** | – | – (evidence and its own skill only) |
 | `ticketer` | `claude-sonnet-5-5` | yes | – | – |
 | `scribe` | `claude-sonnet-5-5` | yes | **yes** | – |
 | `designer` | `claude-sonnet-5-5` | yes | – | – |
@@ -143,12 +152,13 @@ conversations — a sub-agent runs autonomously and cannot hold a dialogue.
   dispatch and every result carries one routing line,
   `<SIMPLE|MODERATE|COMPLEX> → <model>`; a follow-up whose tier needs a
   different model goes to a fresh session. Menus and signals: `radar-lanes` §4c.
-- **The `reviewer` is never routed.** Its gate re-run is the only verification
-  in the bundle, so it always runs its pin.
+- **The `reviewer` and the `verifier` are never routed.** They are the two
+  verification steps in the bundle, so they always run their pin.
 - **Only `scribe` may push** — enforced by policy, not by asking nicely.
-- **The `reviewer` never sees the coder's report or reasoning** — only branch,
-  diff and acceptance criteria. With a single vendor, context isolation is where
-  review independence comes from.
+- **The `reviewer` and the `verifier` never see the coder's report or
+  reasoning** — only branch, diff (or changed paths) and acceptance criteria.
+  With a single vendor, context isolation is where their independence comes
+  from.
 
 ## Review, and the round trip in Omnigent
 
@@ -156,9 +166,11 @@ Human review capacity is the bottleneck, not agent output. `review` does three
 things, and the first is easy to miss:
 
 1. **Re-runs the project's gates** against the branch — independently, finding
-   them itself. This is the **only verification in the bundle**. The
+   them itself. This is the **only independent gate run in the bundle**. The
    orchestrator never checks a worker's claim; this step is where "the tests
-   pass" stops being hearsay.
+   pass" stops being hearsay. What the gates cannot tell you — what the app
+   does when someone uses it — is the [`verify`](#verification-on-the-real-surface)
+   step's job.
 2. **Findings** — what is wrong, judged against the acceptance criteria.
 3. **A risk map** — where nobody has checked.
 
@@ -198,6 +210,65 @@ Two things worth knowing:
   send it, before any agent has seen it. Only the coder's result says it is
   fixed.
 
+## Verification on the real surface
+
+Green gates prove the code agrees with its own tests. They do not prove the
+login form logs anyone in. `verify` does: the `verifier` launches the app,
+drives the features the change touches the way a user would — every entry point
+the map lists, toolbar and shortcut and CLI alike — and returns one verdict per
+feature, with the evidence on disk.
+
+It does that through **your project's own verification skill**,
+`.claude/skills/verify-<app>/`, adapted from
+[open-pstack](https://github.com/ericlitman/open-pstack)'s pair of
+verification skills:
+
+| Step | What it does |
+|---|---|
+| `verify-setup` | Reads the repo to find the surface, the launch command, a way to drive it and what counts as evidence. Writes `verify-<app>` with Launch, Doctor, Drive, Evidence and Cleanup sections, plus a feature map (one file per user-facing feature). Proves it once end to end before handing it over. |
+| `verify` | Picks the mapped features the diff and the acceptance criteria touch, launches against disposable state, health-checks, drives, keeps the evidence, cleans up. `pass` means every selected feature was driven and behaved; `partial` says which were not reachable. |
+| `verify-maintain` | A fanout of `explorer`s reads each feature from source; the `verifier` then drives every feature live and fixes the skill where it drifted. Product regressions come back as findings, never as edits to the map. |
+
+### When each step runs
+
+You do not have to remember any of this; radar proposes each step at its
+point, and every proposal is still a question with a default.
+
+| Moment | radar proposes |
+|---|---|
+| A user-facing change passed `review` (lane 2, and every ticket of lane 3) | `verify` as the default next step |
+| …and the project has no verification skill yet | `verify-setup` then `verify`, as one yes. Declined once, it is not offered again that session |
+| A user-facing quick change (lane 1) | `deliver` first, `verify` (or setup then verify) as the second option |
+| `verify` is blocked because the skill no longer matches the app | `verify-maintain` **before** `deliver`, on the same branch, then `verify` again |
+| `verify` passed but reported drift (`drift:` in its result) | `verify-maintain` **after** `deliver`, as its own PR |
+| A lane-3 feature's last ticket is delivered and its tickets reported drift | one `verify-maintain` for the whole feature, not one per ticket |
+
+radar checks for the skill itself (`ls .claude/skills/`); it never asks you
+whether one exists. Changes nobody can see — refactors, tests, tooling, docs —
+never get `verify` proposed.
+
+What holds for all three:
+
+- **It never touches product code.** A feature that does not work is a `fail`
+  with evidence, and the fix is an `implement`. The verifier writes evidence
+  under `.omnigent/runs/` and, for setup and maintenance, the skill itself —
+  nothing else, and nothing committed.
+- **Starting the app is asked for.** The `verify` question spells out that it
+  runs the app locally. Installing dependencies or downloading a browser needs
+  a yes too, as everywhere in radar — the `verify-setup` question includes it,
+  since a first setup usually needs a driver such as Playwright.
+- **The skill brings its own driver.** Launch, doctor and drive scripts
+  (`.sh`, `.mjs`, …) live in `.claude/skills/verify-<app>/scripts/`. A driver
+  dependency your project does not already have goes into a `package.json`
+  and lockfile **inside the skill directory**, with its `node_modules/`
+  gitignored there — never into your project's own manifest.
+- **Kill what you started, keep what you proved.** Cleanup stops the
+  processes the run launched, never a dev server of yours on the same port,
+  and leaves the evidence in place.
+- **The skill belongs to your project**, not to radar: no `radar-` prefix,
+  committed with your code. poteto, plain Claude Code and colleagues use the
+  same one.
+
 ## Your project's own skills
 
 If the repository you are working in ships skills of its own under
@@ -223,7 +294,7 @@ Two consequences worth knowing:
 
 ## Extending it
 
-The six workers are a starting set, not a fixed roster. Everything you add stays
+The seven workers are a starting set, not a fixed roster. Everything you add stays
 inside the bundle, so a colleague who clones the repo gets your additions with
 it.
 
@@ -266,7 +337,8 @@ skills do not reach the workers, and one worker's do not reach another.
   project/vcs.md    # commit — branch naming, commit format, tracker, labels
   learnings.md      # commit — rules from past sessions, capped at ~40 lines
   state.json        # commit — only for a lane-3 feature in flight
-  runs/             # gitignore — worker reports
+  runs/             # gitignore — worker reports, verification evidence
+.claude/skills/verify-<app>/   # commit — from verify-setup, if you run it
 ```
 
 That is all of it. There is deliberately **no summary of your codebase** — no
@@ -317,6 +389,8 @@ agents/radar/
   agents/<worker>/
     config.yaml
     skills/                 # bundled with the worker that runs them
+  agents/verifier/
+    UPSTREAM.md             # which open-pstack skills it adapts, and how
 agents/poteto/
   config.yaml               # pstack's lead engineer
   UPSTREAM.md               # pinned open-pstack commit, what is left out
@@ -333,3 +407,8 @@ Apache-2.0 and carries its own `LICENSE.txt`.
 `agents/poteto/skills/` is open-pstack's work (MIT), built on Lauren Tan's
 pstack and including attributed MIT-licensed work from Cursor Team Kit and
 Superpowers. Its license and attribution files are in `agents/poteto/licenses/`.
+
+`agents/radar/agents/verifier/skills/radar-create-verification-skill/` and
+`radar-maintain-verification-skill/` are adapted from the same open-pstack
+skills (MIT, Lauren Tan); see `LICENSE-pstack` and `UPSTREAM.md` in
+`agents/radar/agents/verifier/`.
