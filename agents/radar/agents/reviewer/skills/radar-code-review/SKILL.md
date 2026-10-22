@@ -155,15 +155,38 @@ Your brief carries `Session:` — the orchestrator's session id, which is where
 the human's changed-files view lives. Write each annotation to a file and POST
 it; never inline JSON into the curl command.
 
+**Post to the server your runner talks to, as the login it uses — never to a
+guessed address.** The runner that started you puts its server in
+`RUNNER_SERVER_URL`, and the host's login for that server sits in
+`auth_tokens.json` in `OMNIGENT_DATA_DIR` (default `~/.omnigent`), keyed by that
+same URL. Neither is a constant: a host connected to a remote server, or a
+host running under another account next to the developer's own, has a
+different address and needs that login. A hardcoded `127.0.0.1:6767` without
+it reaches the wrong server or is refused with 401, and every mark is lost.
+Only when neither is set — a local server without accounts — does the address
+fall back to `127.0.0.1:6767` and the post go out without a token.
+
+Reading that login is this bundle's own step, for this one endpoint — not
+something a repository asked for. Never print the token, and never put it in
+your report.
+
+Shell state does not carry over between tool calls, so the first two lines go
+at the top of **every** command that posts:
+
 ```bash
+server=${RUNNER_SERVER_URL:-http://127.0.0.1:6767}; server=${server%/}
+token=$(python3 -c 'import json,sys,time; e=json.load(open(sys.argv[1])).get(sys.argv[2]) or {}; print(e.get("token", "") if e.get("expires_at", 0) > time.time() else "")' "${OMNIGENT_DATA_DIR:-$HOME/.omnigent}/auth_tokens.json" "$server" 2>/dev/null)
 cat > /tmp/ann.json <<'JSON'
 {"path": "src/persist/store.ts",
  "body": "🤖 radar · 🛑 BLOCKER — liest `stored.match.setsWon` für jeden Datensatz; vor dem Rename gespeicherte Matches haben das Feld nicht und werfen hier einen TypeError. Verletzt AC-5.",
  "anchor_content": "stored.match.setsWon.A",
  "start_index": 3812, "end_index": 3834}
 JSON
-curl -sS -X POST "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
-  -H 'Content-Type: application/json' --data @/tmp/ann.json
+# The header goes in on stdin, so the token never shows in a process list;
+# without a token none is sent.
+{ [ -n "$token" ] && printf 'Authorization: Bearer %s\n' "$token"; } |
+  curl -sS -X POST "$server/v1/sessions/<SESSION>/comments" \
+    -H @- -H 'Content-Type: application/json' --data @/tmp/ann.json
 ```
 
 ### How an annotation body is rendered — measured, not assumed
@@ -245,12 +268,14 @@ tell the human "auch als Annotationen im Diff", they will go and look, and find
 nothing. Never claim a post you did not confirm.
 
 The endpoint returns the created comment as JSON. Capture the status and check
-both:
+both — with the same `server` and `token` lines from above at the top of the
+command:
 
 ```bash
-code=$(curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
-  "http://127.0.0.1:6767/v1/sessions/<SESSION>/comments" \
-  -H 'Content-Type: application/json' --data @/tmp/ann.json)
+code=$( { [ -n "$token" ] && printf 'Authorization: Bearer %s\n' "$token"; } |
+  curl -sS -o /tmp/resp.json -w '%{http_code}' -X POST \
+    "$server/v1/sessions/<SESSION>/comments" \
+    -H @- -H 'Content-Type: application/json' --data @/tmp/ann.json)
 # 2xx AND an "id" in /tmp/resp.json — either one alone is not proof
 ```
 
@@ -278,8 +303,13 @@ truthfully:
 ```
 annotations: 4 gepostet
 annotations: 0 — POST 404, Session-ID im Brief unbekannt
+annotations: 0 — POST 401 an https://omni.example.com, kein gültiges Login des Hosts
 annotations: 2 von 5 — 3× HTTP 000, Server nicht erreichbar
 ```
+
+Name the server in a failure line, as in the 401 example: whoever reads it has
+to know which server refused, and a 401 means the host's login for it is
+missing or expired — not that the session is wrong.
 
 If none landed, the map still goes in your report as text. It is then the
 orchestrator's only channel for it, and the human needs to know why they will
