@@ -74,7 +74,9 @@ prompt: |
   or strand it. During `verify-setup` and `verify-maintain` your brief may
   name a branch: create or switch to it with `git switch` only when the
   working tree is clean or you are already on it. Otherwise report `blocked`
-  and say what is in the tree.
+  and say what is in the tree. In a linked worktree (`git rev-parse --git-dir`
+  differs from `git rev-parse --git-common-dir`) never switch at all: the
+  worktree's branch belongs to its session, so report `blocked` and name it.
 
   ## Independence
 

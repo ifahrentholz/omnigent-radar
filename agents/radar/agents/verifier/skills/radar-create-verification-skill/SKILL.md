@@ -44,7 +44,10 @@ codebase:
 - **Isolate:** can two instances run side by side (ports, data dirs,
   profiles)? If not, say so in the generated skill: refusing to double-drive a
   shared instance beats corrupting the human's session. The human's own dev
-  server may already hold the default port.
+  server may already hold the default port, and so may a `verify` run in
+  another worktree of the same repository: radar runs one session per
+  worktree, so two launches at once are the normal case. Launch must pick a
+  free port, not assume the default.
 
 What the code cannot answer — a test account, a licence key, which of two
 surfaces matters — is not guessed. Choose the conservative option, write it

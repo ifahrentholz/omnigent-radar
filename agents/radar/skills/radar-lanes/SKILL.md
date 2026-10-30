@@ -76,6 +76,49 @@ Route it, never do it:
 Then report as usual: one line of result, one line proposing the next step
 (normally `review` again, or `deliver`).
 
+## 1c. One session per worktree
+
+Parallel work in radar means **several radar sessions, each in its own git
+worktree**, never several writing workers inside one session. The
+changed-files view runs `git status` in the session's own directory, so each
+worktree gets its own diff and its own annotations. Inside one session every
+worker shares that one tree: never dispatch `coder`, `designer` or a writing
+`verifier` while another of them is still running. A fanout of `explorer`s is
+fine, since they do not touch the tree.
+
+You can tell you are in a linked worktree when `git rev-parse --git-dir` and
+`git rev-parse --git-common-dir` differ. Two things follow from it:
+
+- **The branch is already set.** The worktree was created for one branch, so
+  `implement`, `verify-setup` and `verify-maintain` stay on it. Never name a
+  different branch in a brief, and never propose switching. The `coder` and
+  the `verifier` refuse to switch there anyway.
+- **The checkout is often fresh.** Gitignored install directories
+  (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
+  so the project's gates cannot run yet. Before the first `implement` in this
+  checkout, check with one `ls`: a lockfile without its install directory
+  gets one more line in the `implement` ask, with the exact command from the
+  lockfile.
+
+  ```
+  implement starten?
+  - installiert zuerst die Projekt-Abhängigkeiten (`pnpm install --frozen-lockfile`) — Netz
+  - …
+
+  [ja / ohne Installation]
+  ```
+
+  A yes puts `Freigegeben: Projekt-Abhängigkeiten installieren
+  (<exact command>)` into the coder's brief. Ask once per session. The
+  `reviewer` cannot install, so it relies on the coder's install. This is the
+  project's own dependency set; the verification skill's driver install is
+  its own question (§2b).
+
+**Ports are shared across worktrees.** A dev server or a `verify` run in
+another worktree of the same repository may hold the default port right now.
+The verifier already takes a port nobody else owns. When you hand a worker a
+dev-server command, say the same in the brief.
+
 ## 2. The step menu
 
 | Step | Worker | `purpose` | Braucht | Liefert | Default-next |
@@ -189,8 +232,8 @@ verify starten?
 ```
 
 **A skill whose driver is not installed on this checkout** — it ships a
-`package.json` but has no `node_modules/`, typically after a fresh clone; one
-`ls` tells you — gets the install as one more line in that ask
+`package.json` but has no `node_modules/`, typically after a fresh clone or
+in a new worktree; one `ls` tells you — gets the install as one more line in that ask
 (`- installiert die Treiber-Abhängigkeiten aus dem Lockfile des Skills — npm, Netz`),
 and a yes puts `Freigegeben: Treiber-Abhängigkeiten installieren` into the
 brief. Ask it once per session per checkout, not on every `verify`.
@@ -234,7 +277,8 @@ and leave that change **uncommitted** for `deliver`, so both need a branch.
 - **Standalone** — on request, or `verify-maintain` proposed after `deliver`
   or at the end of a feature: name a branch per `vcs.md` in the brief (e.g.
   `chore/verify-<app>`); the verifier creates it from a clean tree. A dirty
-  tree with unrelated work is a reason to ask first, not to switch.
+  tree with unrelated work is a reason to ask first, not to switch. In a
+  linked worktree, name no branch: the worktree's branch is the one (§1c).
 
 `verify-setup` is one dispatch. Tell the verifier what the human said about
 the surface, if anything; it finds the rest from the repo.
