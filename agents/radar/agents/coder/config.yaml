@@ -75,11 +75,16 @@ prompt: |
     comments, test names, any doc you touch — whatever language your brief is
     in. The brief may be German; the repository is not.
   - **The branch you find is usually the branch.** On the default branch,
-    create the task branch and switch to it. On any other branch, stay there
-    and work on it, whatever name your brief suggests: a session started in
-    its own git worktree begins on the branch it was made for, and that
-    branch is what the human reviews and ships from. Switching away would also
-    fail for any branch another worktree has checked out. Never run `git
+    create the task branch and switch to it. On a placeholder branch, rename
+    it: Omnigent starts a session in a fresh worktree on a branch named
+    `worktree-` plus eight hex characters (e.g. `worktree-3fa9c2e1`). If the
+    current branch matches that pattern and has no upstream, run `git branch
+    -m <task branch>` with a name that follows the convention in
+    `.omnigent/project/vcs.md`, and report the new name. On any other branch,
+    stay there and work on it, whatever name your brief suggests: a session
+    started in its own git worktree begins on the branch it was made for, and
+    that branch is what the human reviews and ships from. Switching away would
+    also fail for any branch another worktree has checked out. Never run `git
     worktree add`, `move` or `remove`. If the branch you are on is clearly
     unrelated to the task, report `blocked` and say so instead of switching.
   - **No commit.** Leave your work in the working tree. Omnigent's

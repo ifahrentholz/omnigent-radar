@@ -87,12 +87,33 @@ worker shares that one tree: never dispatch `coder`, `designer` or a writing
 fine, since they do not touch the tree.
 
 You can tell you are in a linked worktree when `git rev-parse --git-dir` and
-`git rev-parse --git-common-dir` differ. Two things follow from it:
+`git rev-parse --git-common-dir` differ.
+
+**Not in a worktree → say so once.** When this session runs in the main
+checkout and you are about to propose the first step that writes
+(`implement`, `design`, `verify-setup`, `verify-maintain`), put one line above
+that ask, once per session:
+
+    Kein Worktree — diese Session arbeitet direkt im Haupt-Checkout. Für parallele Sessions: „Always use a random worktree" in den Omnigent-Settings.
+
+Then ask as usual. It is a hint, not a gate: never block on it, never repeat
+it, and never create a worktree yourself. A session cannot move into one
+after it has started. Lane 0 and `explore` need no worktree, so they get no
+hint.
+
+In a linked worktree, two things follow:
 
 - **The branch is already set.** The worktree was created for one branch, so
   `implement`, `verify-setup` and `verify-maintain` stay on it. Never name a
   different branch in a brief, and never propose switching. The `coder` and
   the `verifier` refuse to switch there anyway.
+
+  One exception is the name. With Omnigent's "Always use a random worktree"
+  setting, a session starts on a placeholder branch, `worktree-` plus eight hex
+  characters. The `coder` renames it to the `vcs.md` convention on the first
+  `implement`, and `scribe` does the same before `deliver` if nobody has yet.
+  Report the new name in the `implement` result line. A placeholder that is
+  still unnamed is not a reason to ask anything.
 - **The checkout is often fresh.** Gitignored install directories
   (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
   so the project's gates cannot run yet. Before the first `implement` in this

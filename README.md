@@ -220,13 +220,22 @@ view runs `git status` in its own directory, so **every worktree gets its own
 uncommitted diff and its own annotations**. That is how radar runs in
 parallel: one radar session per worktree, one ticket or feature each.
 
+The simplest setup is Omnigent's **"Always use a random worktree"** setting, or
+the per-project "Random worktree" setting. Every new session then starts in a
+fresh worktree on a placeholder branch such as `worktree-3fa9c2e1`. The `coder`
+renames it to your `vcs.md` convention on the first `implement`. If nobody
+did, `scribe` renames it before `deliver`, so a placeholder never gets
+pushed. A session that runs in the main checkout gets one line saying so
+before its first writing step, and then works as before.
+
+To pick the branch yourself, install the bundle once with `omnigent agent add
+<this repo>/agents/radar` and create or select a worktree in Omnigent's New
+Session dialog. From the CLI:
+
 ```bash
 git worktree add ../myapp-login -b feature/412-login
 cd ../myapp-login && radar
 ```
-
-Or install the bundle once with `omnigent agent add <this repo>/agents/radar`
-and pick radar and the worktree in Omnigent's New Session dialog.
 
 Inside one session nothing runs in parallel that writes. The workers share the
 session's tree, so radar never runs two writing workers at once. Parallel
@@ -234,7 +243,7 @@ explorers are fine.
 
 | | |
 |---|---|
-| **Branch** | The worktree's branch is the session's branch. The `coder` stays on whatever branch it finds unless that is the default branch, and in a linked worktree neither the `coder` nor the `verifier` switches. |
+| **Branch** | The worktree's branch is the session's branch. The `coder` stays on whatever branch it finds, except on the default branch, where it creates one, and on a `worktree-<hex>` placeholder, which it renames. In a linked worktree neither the `coder` nor the `verifier` switches. Omnigent keeps the original name on record, so its "delete local branches" option on archive runs `git branch -D` on a name that no longer exists, fails, and leaves the renamed branch behind. |
 | **Dependencies** | A new worktree has no `node_modules/`, `.venv/` or other gitignored installs, so the gates cannot run yet. Before the first `implement` there, radar adds the install to the ask, as a network step you approve. The verification skill's driver install is asked about separately, the same way as after a fresh clone. |
 | **Ports** | Two worktrees share the machine's ports. `verify` takes a free port instead of the default, and radar tells workers the same when it hands them a dev server. Your own dev server in another worktree is safe from `verify`'s cleanup, which kills only what it started. |
 | **Deleting the worktree** | Omnigent can remove a session's worktree when you archive the session. That deletes the directory **including uncommitted changes**, which is radar's normal state until `deliver`. Run `deliver` first, or keep the worktree. |
