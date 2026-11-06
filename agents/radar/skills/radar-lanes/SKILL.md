@@ -90,13 +90,13 @@ You can tell you are in a linked worktree when `git rev-parse --git-dir` and
 `git rev-parse --git-common-dir` differ.
 
 **Not in a worktree → say so once.** When this session runs in the main
-checkout and you are about to propose the first step that writes
+checkout and you are about to dispatch or propose the first step that writes
 (`implement`, `design`, `verify-setup`, `verify-maintain`), put one line above
-that ask, once per session:
+that dispatch line or ask, once per session:
 
     Kein Worktree — diese Session arbeitet direkt im Haupt-Checkout. Für parallele Sessions: „Always use a random worktree" in den Omnigent-Settings.
 
-Then ask as usual. It is a hint, not a gate: never block on it, never repeat
+Then go on as usual. It is a hint, not a gate: never block on it, never repeat
 it, and never create a worktree yourself. A session cannot move into one
 after it has started. Lane 0 and `explore` need no worktree, so they get no
 hint.
@@ -143,23 +143,28 @@ In a linked worktree, three things follow:
 - **The checkout is often fresh.** Gitignored install directories
   (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
   so the project's gates cannot run yet. Before the first `implement` in this
-  checkout, check with one `ls`: a lockfile without its install directory
-  gets one more line in the `implement` ask, with the exact command from the
-  lockfile.
+  checkout, check with one `ls`. A lockfile without its install directory is
+  not a question: installing this checkout's own dependencies from its own
+  lockfile, with the project's own package manager in its locked mode, is
+  pre-approved. Put `Freigegeben: Projekt-Abhängigkeiten installieren
+  (<exact command from the lockfile>)` into the coder's brief and mention it
+  in passing in the dispatch line:
 
   ```
-  implement starten?
-  - installiert zuerst die Projekt-Abhängigkeiten (`pnpm install --frozen-lockfile`) — Netz
-  - …
-
-  [ja / ohne Installation]
+  Lane 2 · Ticket `#412` — implement läuft · installiert zuerst `pnpm install --frozen-lockfile`
   ```
 
-  A yes puts `Freigegeben: Projekt-Abhängigkeiten installieren
-  (<exact command>)` into the coder's brief. Ask once per session. The
-  `reviewer` cannot install, so it relies on the coder's install. This is the
-  project's own dependency set; the verification skill's driver install is
-  its own question (§2b).
+  Once per session is enough. The `reviewer` cannot install, so it relies on
+  the coder's install. The approval covers the packages' install scripts
+  (`postinstall`, `prepare`), because many packages need them for their
+  binaries (esbuild, prisma); the coder does not add `--ignore-scripts`. If
+  the install visibly downloads a browser or driver (puppeteer, playwright and
+  the like), the coder names that in its report. An install script can change
+  local git config as a side effect (husky's `prepare` sets `core.hooksPath`):
+  the coder reports it and does not undo it, and you carry it into the result line. Only
+  the lockfile install is pre-approved. A setup script, a global install, or
+  anything not in the lockfile is still an ask (§4b), and the verification
+  skill's driver install is its own question (§2b).
 
 **Ports are shared across worktrees.** A dev server or a `verify` run in
 another worktree of the same repository may hold the default port right now.
@@ -678,7 +683,8 @@ So before a step touches anything outside reading this checkout, **ask** —
 one line, with a default, in the normal ask format. That covers:
 
 - reaching the network: cloning, fetching, downloading, installing, calling a
-  service
+  service — except installing this checkout's own dependencies from its own
+  lockfile, which is pre-approved (§1c)
 - running a setup or bootstrap script, however routine the project makes it sound
 - anything reading credentials, tokens or a keychain
 - anything that writes outside the repo, or pushes
