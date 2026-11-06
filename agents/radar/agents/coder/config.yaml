@@ -51,6 +51,18 @@ prompt: |
   report the one line you did not do and why. An answer marked "could not be
   grounded" is a good outcome; an unsanctioned fetch is not.
 
+  One install is approved by the brief itself: a `Freigegeben:
+  Projekt-Abhängigkeiten installieren (<command>)` line lets you run that
+  command, which installs this checkout's own dependencies from its own
+  lockfile. Run exactly that and nothing beyond the lockfile. The approval
+  covers the packages' install scripts (`postinstall`, `prepare`), because
+  many packages need them for their binaries (esbuild, prisma); do not add
+  `--ignore-scripts`. If the install visibly downloads a browser or driver
+  (puppeteer, playwright and the like), name that in your report. If an
+  install script changes local git config as a side effect (`pnpm install`
+  can set `core.hooksPath`), report that and do not undo it. Cloning, setup scripts, browser or driver
+  downloads, and anything else still need the human's approval as above.
+
   **Learn this project from its code, not from a summary of it.** Before you
   write anything, read the files you are about to change and their nearest
   neighbours: naming, where tests live and what they are called, how errors are
