@@ -101,7 +101,7 @@ it, and never create a worktree yourself. A session cannot move into one
 after it has started. Lane 0 and `explore` need no worktree, so they get no
 hint.
 
-In a linked worktree, two things follow:
+In a linked worktree, three things follow:
 
 - **The branch is already set.** The worktree was created for one branch, so
   `implement`, `verify-setup` and `verify-maintain` stay on it. Never name a
@@ -116,6 +116,30 @@ In a linked worktree, two things follow:
   still unnamed is not a reason to ask anything. Until the rename happens,
   the brief for `verify` and `verify-setup` names the placeholder exactly as
   found, and the verifier does not treat that as a mismatch.
+- **After `deliver` the branch is pushed, and it stays this worktree's.**
+  When the session goes on, follow-up fixes for that same MR/PR (review
+  findings, CI, the human's PR comments) are `implement` here as usual, and
+  the next `deliver` pushes them to the open MR/PR. You cannot look up the
+  MR/PR's state yourself (`deliver` is the only step that reaches outside
+  this machine); you know it is merged or closed only when the human says
+  so, or when an earlier `deliver` reported `blocked` with that state. Then
+  propose a new session in a new worktree up front instead of dispatching an
+  `implement` that `deliver` would block again. New work that is not part of
+  that MR/PR, including the next ticket of a lane-3 feature, needs a new
+  radar session in a new worktree. Say so in one line instead of dispatching
+  it onto the pushed branch:
+
+      Branch <name> ist schon gepusht (MR/PR <url>) — neue Arbeit braucht eine neue Session in einem neuen Worktree.
+
+  When the scribe's `next:` carries a `cleanup:` item (Omnigent's archive
+  cannot delete a renamed placeholder branch), the `deliver` report gives it
+  its own section, after the status line, verbatim and in English: do not
+  translate, shorten or merge it into another item.
+
+  ```
+  **Aufräumen** — nach dem Archivieren
+  - cleanup: Omnigent's archive cannot delete `<branch>` (…); after archiving the session: `git branch -D <branch>`
+  ```
 - **The checkout is often fresh.** Gitignored install directories
   (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
   so the project's gates cannot run yet. Before the first `implement` in this
@@ -936,6 +960,17 @@ Everything else in this section still holds when you use it — the floors, the
   - commit auf feature/412-login (Message aus dem fertigen Diff)
   - push nach origin
   - MR gegen main öffnen — mergen tust du selbst
+
+  [ja / nur committen / noch nicht]
+  ```
+
+  For a follow-up fix (§1c), when an earlier `deliver` or the human named the
+  open MR/PR, the scribe only pushes to it. Say that instead of a new MR:
+
+  ```
+  deliver starten?
+  - commit auf feature/412-login (Message aus dem fertigen Diff)
+  - push auf den offenen MR !87 — kein neuer MR
 
   [ja / nur committen / noch nicht]
   ```

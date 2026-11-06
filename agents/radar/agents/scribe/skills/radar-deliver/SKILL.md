@@ -34,6 +34,57 @@ Second, **you are writing the message from the finished diff** — the reason th
 step exists separately from `implement`. An implementer writing its message
 mid-flight cannot yet say what the change turned out to be. You can.
 
+**Name a placeholder branch before you commit.** A branch named `worktree-`
+plus eight hex characters (e.g. `worktree-3fa9c2e1`) is the random name
+Omnigent gave a new worktree, not a name anyone chose. The `coder` renames it
+on its first `implement`; if nobody has, you do:
+
+```bash
+git branch --show-current                       # matches ^worktree-[0-9a-f]{8}$ ?
+git rev-parse --abbrev-ref --symbolic-full-name @{upstream}   # fails → no upstream
+git branch -m <name per vcs.md>
+```
+
+Rename only when it matches **and** has no upstream. A placeholder that
+already has an upstream is one you never push to: do not rename it (that
+would orphan the remote branch and any MR/PR on it), do not commit, do not
+push. Stop and report `blocked` with the branch name; the human decides what
+happens to it.
+
+A renamed placeholder has one side effect you cannot fix from here. Omnigent
+keeps the original name on record, so its "delete local branches" option on
+archive runs `git branch -D worktree-<hex>`, which fails, and the renamed
+branch stays behind. Whoever renamed it, git records it in the reflog:
+
+```bash
+git reflog show --format=%gs <branch> | grep -m1 'renamed refs/heads/worktree-'
+```
+
+A hit means your report carries the cleanup line (see Report).
+
+**Look up the MR/PR before you commit — only when the push is approved.** The
+lookup reaches the network. A commit-only `deliver` (the human answered `nur
+committen`) approves no network: skip the lookup, commit, and stop there.
+Otherwise, one branch, one MR/PR: find out what this branch already has, in
+every state, with the CLI that `vcs.md` names. Do it before the commit,
+because a block after it leaves an unpushed local commit (the diff vanishes
+from the changed-files view, and a clean tree with commits reads as "deliver
+ran"):
+
+```bash
+gh pr list --head <branch> --state all --json number,state,url
+glab mr list --source-branch <branch> --all --output json
+```
+
+- **None** → commit, push, then open one (§3).
+- **Open** — a follow-up fix after an earlier `deliver` → commit and push; that
+  updates it. Do not open a second one, report its URL, and edit its body only
+  when the follow-up changed what it says.
+- **Merged or closed** → do not commit, push, or open a new one from this
+  branch. Stop and report `blocked` with that MR/PR's URL and state: new work
+  after a merge needs a new branch from the base, in a new session. The tree
+  stays dirty.
+
 If earlier commits already exist on the branch (a resumed lane, a human's own
 work), leave them alone unless one of them is wrong — a mistyped type, a subject
 that no longer matches what shipped. Reword with `git commit --amend` or
@@ -52,11 +103,19 @@ Every line must carry it.
 
 ## 2. Push
 
+**One branch, one MR/PR.** Which of the three states the branch is in was
+found before the commit (§1); act on it here.
+
+- **None** → push, then open one (§3).
+- **Open** → push; that updates it. Skip §3's create.
+
 Push the branch to its remote. **Never force-push a branch that is not yours,
 and never push to a protected branch** — if the branch's upstream is `main` or
 equivalent, stop and report that instead.
 
 ## 3. Open the MR / PR
+
+Only when the lookup in §1 found no MR/PR for the branch.
 
 ### Write the body to a FILE first
 
@@ -158,3 +217,9 @@ parenthesis, `Closes` twice: fix with `glab mr update <n> --description ...` or
 ## Report
 
 Return the branch name, the MR/PR URL, and the final commit subject.
+
+When the branch was renamed from a `worktree-<hex>` placeholder (by you or the
+`coder`), put this line into your `next:` field, prefixed `cleanup:`, so the
+human sees it before archiving. radar passes it on verbatim:
+
+    cleanup: Omnigent's archive cannot delete `<branch>` (it knows it as `worktree-<hex>`); after archiving the session: `git branch -D <branch>`
