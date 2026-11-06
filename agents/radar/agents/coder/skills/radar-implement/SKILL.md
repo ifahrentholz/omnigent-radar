@@ -16,8 +16,8 @@ you work, the full suite once at the end. Report every gate as
 `command → pass/fail` with the exact invocation, since the reviewer reuses it.
 If a gate you expected does not exist, say so rather than inventing one.
 
-Create or switch to the task branch if your brief names one, but **do not
-commit**. Leave your work in the working tree.
+Branches follow your config; **do not commit**. Leave your work in the
+working tree.
 
 That is deliberate. Omnigent's changed-files view runs
 `git status --porcelain` and shows **uncommitted** changes only — a committed

@@ -22,7 +22,7 @@ What makes it different from "an agent that writes code":
 |---|---|
 | **Writes nothing itself** | The orchestrator classifies, dispatches, reports, asks. When a worker says tests pass, it relays that — it does not check. Verification is a step you opt into. |
 | **Proposes the cheapest fit** | Escalating costs you one word. Ceremony you did not need costs a spec and twenty minutes. |
-| **Leaves the diff uncommitted** | Until you say otherwise, so you can read and annotate it in Omnigent's changed-files view while it is still open. |
+| **Leaves the diff uncommitted** | Until you say otherwise, so you can read and annotate it in Omnigent's changed-files view while it is still open. For parallel work, run [one session per worktree](#parallel-work-one-session-per-worktree). |
 
 ## Install
 
@@ -209,6 +209,45 @@ Two things worth knowing:
 - **"addressed" does not mean done.** Omnigent flips a comment's status when you
   send it, before any agent has seen it. Only the coder's result says it is
   fixed.
+
+## Parallel work: one session per worktree
+
+The loop above needs the diff uncommitted, and that has not changed: as of
+Omnigent 0.20.0 the changed-files view still compares the working tree against
+`HEAD`. Its "vs base" view needs an open PR and takes no annotations. What
+0.20.0 does have is a git worktree per session. Each session's changed-files
+view runs `git status` in its own directory, so **every worktree gets its own
+uncommitted diff and its own annotations**. That is how radar runs in
+parallel: one radar session per worktree, one ticket or feature each.
+
+The simplest setup is Omnigent's **"Always use a random worktree"** setting, or
+the per-project "Random worktree" setting. Every new session then starts in a
+fresh worktree on a placeholder branch such as `worktree-3fa9c2e1`. The `coder`
+renames it to your `vcs.md` convention on the first `implement`. If nobody
+did, `scribe` renames it before `deliver`, so a placeholder never gets
+pushed. A session that runs in the main checkout gets one line saying so
+before its first writing step, and then works as before.
+
+To pick the branch yourself, install the bundle once with `omnigent agent add
+<this repo>/agents/radar` and create or select a worktree in Omnigent's New
+Session dialog. From the CLI:
+
+```bash
+git worktree add ../myapp-login -b feature/412-login
+cd ../myapp-login && radar
+```
+
+Inside one session nothing runs in parallel that writes. The workers share the
+session's tree, so radar never runs two writing workers at once. Parallel
+explorers are fine.
+
+| | |
+|---|---|
+| **Branch** | The worktree's branch is the session's branch. The `coder` stays on whatever branch it finds, except on the default branch, where it creates one, and on a `worktree-<hex>` placeholder, which it renames. In a linked worktree neither the `coder` nor the `verifier` switches. Omnigent keeps the original name on record, so its "delete local branches" option on archive runs `git branch -D` on a name that no longer exists, fails, and leaves the renamed branch behind. `deliver` says so in its result, with the `git branch -D` to run after archiving the session. |
+| **Dependencies** | A new worktree has no `node_modules/`, `.venv/` or other gitignored installs, so the gates cannot run yet. Before the first `implement` there, radar adds the install to the ask, as a network step you approve. The verification skill's driver install is asked about separately, the same way as after a fresh clone. |
+| **Ports** | Two worktrees share the machine's ports. `verify` takes a free port instead of the default, and radar tells workers the same when it hands them a dev server. Your own dev server in another worktree is safe from `verify`'s cleanup, which kills only what it started. |
+| **Deleting the worktree** | Omnigent can remove a session's worktree when you archive the session. That deletes the directory **including uncommitted changes**, which is radar's normal state until `deliver`. Run `deliver` first, or keep the worktree. After `deliver`, follow-up fixes for the same PR stay in this worktree; new work gets a new session in a new worktree. |
+| **Shared files** | `learnings.md` and a lane-3 `state.json` are committed per branch. Two worktrees that both `learn`, or both run a lane-3 feature, meet in a merge conflict. Keep both sides. |
 
 ## Verification on the real surface
 

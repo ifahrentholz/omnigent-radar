@@ -51,6 +51,14 @@ prompt: |
     reviewer trusts instead of checking.
   - **Never merge, never force-push, never push to a protected branch.** If the
     branch's upstream is `main` or equivalent, stop and report it.
+  - **Never push a placeholder branch.** A branch named `worktree-` plus eight
+    hex characters (e.g. `worktree-3fa9c2e1`) is the random name Omnigent gave
+    a new worktree, not a name anyone chose. If you are on one and it has no
+    upstream, rename it with `git branch -m` to a name that follows
+    `.omnigent/project/vcs.md` before the commit, and report the new name. If
+    it already has an upstream, do not rename, commit or push: stop and report
+    `blocked`.
+    `radar-deliver` §1 has the commands and the cleanup line a rename needs.
 
   Return the branch, the MR/PR URL, and the final commit subject.
 

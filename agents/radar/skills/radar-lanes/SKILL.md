@@ -76,6 +76,96 @@ Route it, never do it:
 Then report as usual: one line of result, one line proposing the next step
 (normally `review` again, or `deliver`).
 
+## 1c. One session per worktree
+
+Parallel work in radar means **several radar sessions, each in its own git
+worktree**, never several writing workers inside one session. The
+changed-files view runs `git status` in the session's own directory, so each
+worktree gets its own diff and its own annotations. Inside one session every
+worker shares that one tree: never dispatch `coder`, `designer` or a writing
+`verifier` while another of them is still running. A fanout of `explorer`s is
+fine, since they do not touch the tree.
+
+You can tell you are in a linked worktree when `git rev-parse --git-dir` and
+`git rev-parse --git-common-dir` differ.
+
+**Not in a worktree → say so once.** When this session runs in the main
+checkout and you are about to propose the first step that writes
+(`implement`, `design`, `verify-setup`, `verify-maintain`), put one line above
+that ask, once per session:
+
+    Kein Worktree — diese Session arbeitet direkt im Haupt-Checkout. Für parallele Sessions: „Always use a random worktree" in den Omnigent-Settings.
+
+Then ask as usual. It is a hint, not a gate: never block on it, never repeat
+it, and never create a worktree yourself. A session cannot move into one
+after it has started. Lane 0 and `explore` need no worktree, so they get no
+hint.
+
+In a linked worktree, three things follow:
+
+- **The branch is already set.** The worktree was created for one branch, so
+  `implement`, `verify-setup` and `verify-maintain` stay on it. Never name a
+  different branch in a brief, and never propose switching. The `coder` and
+  the `verifier` refuse to switch there anyway.
+
+  One exception is the name. With Omnigent's "Always use a random worktree"
+  setting, a session starts on a placeholder branch, `worktree-` plus eight hex
+  characters. The `coder` renames it to the `vcs.md` convention on the first
+  `implement`, and `scribe` does the same before `deliver` if nobody has yet.
+  Report the new name in the `implement` result line. A placeholder that is
+  still unnamed is not a reason to ask anything. Until the rename happens,
+  the brief for `verify` and `verify-setup` names the placeholder exactly as
+  found, and the verifier does not treat that as a mismatch.
+- **After `deliver` the branch is pushed, and it stays this worktree's.**
+  When the session goes on, follow-up fixes for that same MR/PR (review
+  findings, CI, the human's PR comments) are `implement` here as usual, and
+  the next `deliver` pushes them to the open MR/PR. You cannot look up the
+  MR/PR's state yourself (`deliver` is the only step that reaches outside
+  this machine); you know it is merged or closed only when the human says
+  so, or when an earlier `deliver` reported `blocked` with that state. Then
+  propose a new session in a new worktree up front instead of dispatching an
+  `implement` that `deliver` would block again. New work that is not part of
+  that MR/PR, including the next ticket of a lane-3 feature, needs a new
+  radar session in a new worktree. Say so in one line instead of dispatching
+  it onto the pushed branch:
+
+      Branch <name> ist schon gepusht (MR/PR <url>) — neue Arbeit braucht eine neue Session in einem neuen Worktree.
+
+  When the scribe's `next:` carries a `cleanup:` item (Omnigent's archive
+  cannot delete a renamed placeholder branch), the `deliver` report gives it
+  its own section, after the status line, verbatim and in English: do not
+  translate, shorten or merge it into another item.
+
+  ```
+  **Aufräumen** — nach dem Archivieren
+  - cleanup: Omnigent's archive cannot delete `<branch>` (…); after archiving the session: `git branch -D <branch>`
+  ```
+- **The checkout is often fresh.** Gitignored install directories
+  (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
+  so the project's gates cannot run yet. Before the first `implement` in this
+  checkout, check with one `ls`: a lockfile without its install directory
+  gets one more line in the `implement` ask, with the exact command from the
+  lockfile.
+
+  ```
+  implement starten?
+  - installiert zuerst die Projekt-Abhängigkeiten (`pnpm install --frozen-lockfile`) — Netz
+  - …
+
+  [ja / ohne Installation]
+  ```
+
+  A yes puts `Freigegeben: Projekt-Abhängigkeiten installieren
+  (<exact command>)` into the coder's brief. Ask once per session. The
+  `reviewer` cannot install, so it relies on the coder's install. This is the
+  project's own dependency set; the verification skill's driver install is
+  its own question (§2b).
+
+**Ports are shared across worktrees.** A dev server or a `verify` run in
+another worktree of the same repository may hold the default port right now.
+The verifier already takes a port nobody else owns. When you hand a worker a
+dev-server command, say the same in the brief.
+
 ## 2. The step menu
 
 | Step | Worker | `purpose` | Braucht | Liefert | Default-next |
@@ -189,8 +279,8 @@ verify starten?
 ```
 
 **A skill whose driver is not installed on this checkout** — it ships a
-`package.json` but has no `node_modules/`, typically after a fresh clone; one
-`ls` tells you — gets the install as one more line in that ask
+`package.json` but has no `node_modules/`, typically after a fresh clone or
+in a new worktree; one `ls` tells you — gets the install as one more line in that ask
 (`- installiert die Treiber-Abhängigkeiten aus dem Lockfile des Skills — npm, Netz`),
 and a yes puts `Freigegeben: Treiber-Abhängigkeiten installieren` into the
 brief. Ask it once per session per checkout, not on every `verify`.
@@ -234,7 +324,9 @@ and leave that change **uncommitted** for `deliver`, so both need a branch.
 - **Standalone** — on request, or `verify-maintain` proposed after `deliver`
   or at the end of a feature: name a branch per `vcs.md` in the brief (e.g.
   `chore/verify-<app>`); the verifier creates it from a clean tree. A dirty
-  tree with unrelated work is a reason to ask first, not to switch.
+  tree with unrelated work is a reason to ask first, not to switch. In a
+  linked worktree, name the branch the worktree is on, exactly as found (§1c) —
+  including a `worktree-<hex>` placeholder not yet renamed.
 
 `verify-setup` is one dispatch. Tell the verifier what the human said about
 the surface, if anything; it finds the rest from the repo.
@@ -872,8 +964,20 @@ Everything else in this section still holds when you use it — the floors, the
   [ja / nur committen / noch nicht]
   ```
 
+  For a follow-up fix (§1c), when an earlier `deliver` or the human named the
+  open MR/PR, the scribe only pushes to it. Say that instead of a new MR:
+
+  ```
+  deliver starten?
+  - commit auf feature/412-login (Message aus dem fertigen Diff)
+  - push auf den offenen MR !87 — kein neuer MR
+
+  [ja / nur committen / noch nicht]
+  ```
+
 - **`designer`** — presentation only: styling, layout, typography. Never logic,
-  never user flow. Onto an existing branch.
+  never user flow. Works on the branch it finds and leaves the change
+  uncommitted for `deliver`.
 
 ## 6. State — lane 3 only
 

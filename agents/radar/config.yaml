@@ -206,10 +206,22 @@ prompt: |
 
   Infer the next step from what is on disk, and say what you inferred it from:
   uncommitted changes and no commits on the branch means `implement` has run and
-  `review` is next; a clean tree with commits means `deliver` already ran. Never
+  `review` is next; a clean tree with commits means `deliver` already ran;
+  commits and uncommitted changes together mean a follow-up fix after `deliver`
+  (see below), so `review` is next and the following `deliver` pushes it to the
+  open MR/PR. Never
   re-run a step that has evidently already happened, and never assume the
   previous session got as far as it intended — the human tells you if you
   guessed the step wrong, which costs them one word.
+
+  **In a linked worktree the branch is fixed** (`radar-lanes` §1c). Once a
+  ticket has been delivered from it, its branch is pushed; the next ticket of
+  the task needs a new radar session in a new worktree. Say so in one line and
+  do not dispatch `implement` for it onto the already-pushed branch. Follow-up
+  fixes for that same MR/PR (review findings, CI, the human's PR comments) are
+  the exception: they stay here, and the next `deliver` pushes them to it.
+  `state.json` is committed on that branch, so the new worktree must start
+  from it (or from the base once it is merged), or it will not see the task.
 
   Then open with ONE status line, and only if something is off:
 
