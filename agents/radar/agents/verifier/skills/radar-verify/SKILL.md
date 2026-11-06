@@ -19,6 +19,8 @@ on the branch your brief names.
 - `git branch --show-current` must be the branch from your brief. If it is
   not, stop: `result: blocked`, and say which branch you found. Never switch
   branches yourself; that would carry or strand the human's uncommitted work.
+  When verification runs before a `worktree-<8hex>` placeholder was renamed,
+  the brief names that exact placeholder and plain equality applies.
 - `git status --porcelain -uall` and `git diff --stat` give the changed paths.
   Compare them with the paths in your brief and say if they differ.
 

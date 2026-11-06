@@ -113,7 +113,9 @@ In a linked worktree, two things follow:
   characters. The `coder` renames it to the `vcs.md` convention on the first
   `implement`, and `scribe` does the same before `deliver` if nobody has yet.
   Report the new name in the `implement` result line. A placeholder that is
-  still unnamed is not a reason to ask anything.
+  still unnamed is not a reason to ask anything. Until the rename happens,
+  the brief for `verify` and `verify-setup` names the placeholder exactly as
+  found, and the verifier does not treat that as a mismatch.
 - **The checkout is often fresh.** Gitignored install directories
   (`node_modules/`, `.venv/`, `vendor/`) are not copied into a new worktree,
   so the project's gates cannot run yet. Before the first `implement` in this
@@ -299,7 +301,8 @@ and leave that change **uncommitted** for `deliver`, so both need a branch.
   or at the end of a feature: name a branch per `vcs.md` in the brief (e.g.
   `chore/verify-<app>`); the verifier creates it from a clean tree. A dirty
   tree with unrelated work is a reason to ask first, not to switch. In a
-  linked worktree, name no branch: the worktree's branch is the one (§1c).
+  linked worktree, name the branch the worktree is on, exactly as found (§1c) —
+  including a `worktree-<hex>` placeholder not yet renamed.
 
 `verify-setup` is one dispatch. Tell the verifier what the human said about
 the surface, if anything; it finds the rest from the repo.
@@ -938,7 +941,8 @@ Everything else in this section still holds when you use it — the floors, the
   ```
 
 - **`designer`** — presentation only: styling, layout, typography. Never logic,
-  never user flow. Onto an existing branch.
+  never user flow. Works on the branch it finds and leaves the change
+  uncommitted for `deliver`.
 
 ## 6. State — lane 3 only
 
